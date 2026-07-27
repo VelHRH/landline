@@ -32,6 +32,7 @@
     "test:watch": "vitest",
     "coverage": "vitest --coverage",
     "migrate": "tsx --conditions=development src/db/scripts/migrator.ts",
+    "seed:cities": "tsx --conditions=development src/db/scripts/seed-cities.ts",
     "reset": "tsx --conditions=development src/db/scripts/reset.ts"
   },
   "dependencies": {

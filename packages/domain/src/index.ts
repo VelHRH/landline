@@ -4,6 +4,8 @@ export * from "./chat/http.js";
 export * from "./chat/open-chat.js";
 export * from "./chat/protocol.js";
 export * from "./chat/schema.js";
+export * from "./city/http.js";
+export * from "./city/schema.js";
 export * from "./room/errors.js";
 export * from "./room/http.js";
 export * from "./room/schema.js";
