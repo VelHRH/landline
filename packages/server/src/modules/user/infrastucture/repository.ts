@@ -93,7 +93,7 @@ export const SessionsRepoLive = Layer.effect(
           users.role,
           users.date_of_birth,
           users.gender,
-          users.interested_in,
+          users.interested_in::text[] AS interested_in,
           users.city_id,
           users.created_at,
           users.updated_at
