@@ -1,12 +1,23 @@
 import type { AuthResponse } from "@landline/domain/user/credentials";
-import { CredentialsPayload } from "@landline/domain/user/credentials";
-import { Effect, Redacted } from "effect";
+import { CredentialsPayload, SignUpPayload } from "@landline/domain/user/credentials";
+import type { Gender } from "@landline/domain/user/enums";
+import { Effect, Redacted, Schema } from "effect";
 import type { ApiClient, ApiResult } from "@/lib/api-client";
 import { err, ok, runApi } from "@/lib/api-client";
 import type { SessionUser } from "./session.service";
 import { toSessionUser } from "./session.service";
 
 export type AuthResult = ApiResult<SessionUser>;
+
+// The profile a user fills in alongside credentials when creating an account.
+export interface SignUpInput {
+  readonly email: string;
+  readonly password: string;
+  readonly dateOfBirth: string;
+  readonly gender: Gender;
+  readonly interestedIn: ReadonlyArray<Gender>;
+  readonly cityId: string;
+}
 
 // CredentialsPayload validates on construction (email shape, password
 // length); surface those as the same kind of readable message as API errors.
@@ -16,21 +27,27 @@ const credentials = (email: string, password: string) =>
     catch: () => new Error("Enter a valid email and a password of at least 8 characters"),
   });
 
-// Shared signup/login pipeline: the endpoint's own tagged error keeps its
+// SignUpPayload adds the profile schema on top of credentials; a decode failure
+// (missing city, empty interestedIn, bad date) collapses to a readable message.
+const signUpPayload = (input: SignUpInput) =>
+  Schema.decodeUnknown(SignUpPayload)(input).pipe(
+    Effect.mapError(() => new Error("Check your details and try again")),
+  );
+
+// Shared signup/login pipeline: the endpoint's own tagged errors keep their
 // readable message; anything else (transport, decode) is not the user's
 // fault and collapses to a generic message.
-const authCall = <E extends { readonly _tag: string; readonly message: string }>(
-  email: string,
-  password: string,
-  call: (client: ApiClient, payload: CredentialsPayload) => Effect.Effect<AuthResponse, E>,
-  userFacingTag: E["_tag"],
+const authCall = <P, E extends { readonly _tag: string; readonly message: string }>(
+  buildPayload: Effect.Effect<P, Error>,
+  call: (client: ApiClient, payload: P) => Effect.Effect<AuthResponse, E>,
+  userFacingTags: ReadonlyArray<string>,
 ): Promise<AuthResult> =>
   runApi((client) =>
-    credentials(email, password).pipe(
+    buildPayload.pipe(
       Effect.flatMap((payload) =>
         call(client, payload).pipe(
           Effect.mapError((error) =>
-            error._tag === userFacingTag ? error : new Error("Something went wrong, try again"),
+            userFacingTags.includes(error._tag) ? error : new Error("Something went wrong, try again"),
           ),
         ),
       ),
@@ -39,18 +56,16 @@ const authCall = <E extends { readonly _tag: string; readonly message: string }>
     ),
   );
 
-export const signUp = (email: string, password: string): Promise<AuthResult> =>
+export const signUp = (input: SignUpInput): Promise<AuthResult> =>
   authCall(
-    email,
-    password,
+    signUpPayload(input),
     (client, payload) => client.users.signUp({ payload, headers: {} }),
-    "EmailAlreadyInUseError",
+    ["EmailAlreadyInUseError", "CityNotFoundError"],
   );
 
 export const login = (email: string, password: string): Promise<AuthResult> =>
   authCall(
-    email,
-    password,
+    credentials(email, password),
     (client, payload) => client.users.login({ payload, headers: {} }),
-    "InvalidCredentialsError",
+    ["InvalidCredentialsError"],
   );

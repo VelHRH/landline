@@ -1,6 +1,11 @@
-import type { CredentialsPayload } from "@landline/domain/user/credentials";
-import type { EmailAlreadyInUseError, InvalidCredentialsError, UnauthorizedError } from "@landline/domain/user/errors";
-import type { User, UserId } from "@landline/domain/user/schema";
+import type { CredentialsPayload, SignUpPayload } from "@landline/domain/user/credentials";
+import type {
+  CityNotFoundError,
+  EmailAlreadyInUseError,
+  InvalidCredentialsError,
+  UnauthorizedError,
+} from "@landline/domain/user/errors";
+import type { Me, UserId } from "@landline/domain/user/schema";
 import * as Context from "effect/Context";
 import * as Duration from "effect/Duration";
 import type * as Effect from "effect/Effect";
@@ -13,14 +18,14 @@ export class AuthService extends Context.Tag("AuthService")<
   AuthService,
   {
     readonly signUp: (
-      payload: CredentialsPayload,
-    ) => Effect.Effect<AuthResult, EmailAlreadyInUseError>;
+      payload: SignUpPayload,
+    ) => Effect.Effect<AuthResult, EmailAlreadyInUseError | CityNotFoundError>;
     readonly login: (
       payload: CredentialsPayload,
     ) => Effect.Effect<AuthResult, InvalidCredentialsError>;
     readonly identify: (
       token: Redacted.Redacted<string>,
-    ) => Effect.Effect<User, UnauthorizedError>;
+    ) => Effect.Effect<Me, UnauthorizedError>;
     readonly logout: (userId: UserId) => Effect.Effect<void>;
   }
 >() {}

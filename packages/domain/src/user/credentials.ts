@@ -1,5 +1,5 @@
 import * as Schema from "effect/Schema";
-import { User } from "./schema.js";
+import { Profile, User } from "./schema.js";
 
 const Email = Schema.compose(Schema.Trim, Schema.Lowercase).pipe(
   Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, {
@@ -26,6 +26,14 @@ export class CredentialsPayload extends Schema.Class<CredentialsPayload>(
 )({
   email: Email,
   password: Password,
+}) {}
+
+// Sign-up carries credentials plus the registration Profile; login only needs
+// credentials, so it keeps using CredentialsPayload.
+export class SignUpPayload extends Schema.Class<SignUpPayload>("SignUpPayload")({
+  email: Email,
+  password: Password,
+  ...Profile.fields,
 }) {}
 
 // API response for signup/login: `token` is present only for mobile clients
