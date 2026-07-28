@@ -15,3 +15,6 @@ scratchpad/*
 .env.development.local
 .env.test.local
 .env.production.local
+
+# GeoNames dump (download via data/README.md; not checked in)
+data/cities15000.txt
