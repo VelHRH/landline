@@ -1,7 +1,9 @@
+import { HttpClient, HttpClientRequest, HttpServer } from "@effect/platform";
 import { expect, layer } from "@effect/vitest";
 import { CredentialsPayload } from "@landline/domain/user/credentials";
+import { Gender, Role } from "@landline/domain/user/enums";
 import { Effect, Redacted } from "effect";
-import { makeApiClient, TestServerLive } from "./harness.js";
+import { makeApiClient, seedCity, signUpPayload, TestServerLive } from "./harness.js";
 
 const password = Redacted.make("correct-horse-battery");
 
@@ -15,10 +17,11 @@ layer(TestServerLive, { excludeTestServices: true })("auth", (it) => {
   it.effect("signup → me → logout → login covers the whole session lifecycle", () =>
     Effect.gen(function*() {
       const client = yield* makeApiClient;
+      const cityId = yield* seedCity;
       const email = "lifecycle@example.com";
 
       const signedUp = yield* client.users.signUp({
-        payload: credentials(email),
+        payload: signUpPayload(email, cityId),
         headers: {},
       });
       expect(signedUp.user.email).toBe(email);
@@ -44,15 +47,57 @@ layer(TestServerLive, { excludeTestServices: true })("auth", (it) => {
       expect(meAgain.id).toBe(signedUp.user.id);
     }));
 
+  it.effect("signup persists the profile, readable through /me", () =>
+    Effect.gen(function*() {
+      const client = yield* makeApiClient;
+      const cityId = yield* seedCity;
+      const email = "profile@example.com";
+
+      yield* client.users.signUp({
+        payload: signUpPayload(email, cityId, { interestedIn: [Gender.MALE, Gender.NONBINARY] }),
+        headers: {},
+      });
+
+      const me = yield* client.users.me();
+      expect(me.role).toBe(Role.USER);
+      expect(me.gender).toBe(Gender.FEMALE);
+      expect(me.interestedIn).toEqual([Gender.MALE, Gender.NONBINARY]);
+      expect(me.cityId).toBe(cityId);
+      expect(me.dateOfBirth).toBe("1995-06-15");
+    }));
+
+  it.effect("signup with an empty interestedIn is rejected", () =>
+    Effect.gen(function*() {
+      const cityId = yield* seedCity;
+      const baseUrl = yield* HttpServer.addressFormattedWith(Effect.succeed);
+      const http = yield* HttpClient.HttpClient;
+
+      const response = yield* http.execute(
+        HttpClientRequest.post(`${baseUrl}/api/user/signup`).pipe(
+          HttpClientRequest.bodyUnsafeJson({
+            email: "empty-interest@example.com",
+            password: "correct-horse-battery",
+            dateOfBirth: "1995-06-15",
+            gender: Gender.FEMALE,
+            interestedIn: [],
+            cityId,
+          }),
+        ),
+      );
+
+      expect(response.status).toBe(400);
+    }));
+
   it.effect("signup with an already used email fails with EmailAlreadyInUseError", () =>
     Effect.gen(function*() {
       const client = yield* makeApiClient;
+      const cityId = yield* seedCity;
       const email = "taken@example.com";
 
-      yield* client.users.signUp({ payload: credentials(email), headers: {} });
+      yield* client.users.signUp({ payload: signUpPayload(email, cityId), headers: {} });
 
       const rejection = yield* client.users
-        .signUp({ payload: credentials(email), headers: {} })
+        .signUp({ payload: signUpPayload(email, cityId), headers: {} })
         .pipe(Effect.flip);
 
       expect(rejection._tag).toBe("EmailAlreadyInUseError");
@@ -64,9 +109,10 @@ layer(TestServerLive, { excludeTestServices: true })("auth", (it) => {
   it.effect("login with a wrong password fails with InvalidCredentialsError", () =>
     Effect.gen(function*() {
       const client = yield* makeApiClient;
+      const cityId = yield* seedCity;
       const email = "wrong-password@example.com";
 
-      yield* client.users.signUp({ payload: credentials(email), headers: {} });
+      yield* client.users.signUp({ payload: signUpPayload(email, cityId), headers: {} });
 
       const rejection = yield* client.users
         .login({ payload: credentials(email, "not-the-password"), headers: {} })

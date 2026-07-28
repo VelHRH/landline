@@ -11,6 +11,7 @@ export * from "./room/http.js";
 export * from "./room/schema.js";
 export * from "./room/upsert.js";
 export * from "./user/credentials.js";
+export * from "./user/enums.js";
 export * from "./user/errors.js";
 export * from "./user/http.js";
 export * from "./user/schema.js";

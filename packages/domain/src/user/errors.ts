@@ -15,6 +15,20 @@ export class EmailAlreadyInUseError extends Schema.TaggedError<EmailAlreadyInUse
   }
 }
 
+export class CityNotFoundError extends Schema.TaggedError<CityNotFoundError>(
+  "CityNotFoundError",
+)(
+  "CityNotFoundError",
+  { cityId: Schema.String },
+  HttpApiSchema.annotations({
+    status: 400,
+  }),
+) {
+  get message() {
+    return `No city with id ${this.cityId}`;
+  }
+}
+
 export class InvalidCredentialsError extends Schema.TaggedError<InvalidCredentialsError>(
   "InvalidCredentialsError",
 )(

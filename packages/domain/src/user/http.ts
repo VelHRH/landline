@@ -1,13 +1,13 @@
 import { HttpApiEndpoint, HttpApiGroup, HttpApiMiddleware, HttpApiSecurity } from "@effect/platform";
 import { Context } from "effect";
 import * as Schema from "effect/Schema";
-import { AuthResponse, CredentialsPayload } from "./credentials.js";
-import { EmailAlreadyInUseError, InvalidCredentialsError, UnauthorizedError } from "./errors.js";
-import { User } from "./schema.js";
+import { AuthResponse, CredentialsPayload, SignUpPayload } from "./credentials.js";
+import { CityNotFoundError, EmailAlreadyInUseError, InvalidCredentialsError, UnauthorizedError } from "./errors.js";
+import { Me } from "./schema.js";
 
 export class CurrentUser extends Context.Tag("CurrentUser")<
   CurrentUser,
-  User
+  Me
 >() {}
 
 export const SessionCookie = HttpApiSecurity.apiKey({
@@ -34,10 +34,11 @@ export const ClientHeaders = Schema.Struct({
 export class UsersGroup extends HttpApiGroup.make("users")
   .add(
     HttpApiEndpoint.post("signUp", "/signup")
-      .setPayload(CredentialsPayload)
+      .setPayload(SignUpPayload)
       .setHeaders(ClientHeaders)
       .addSuccess(AuthResponse)
-      .addError(EmailAlreadyInUseError),
+      .addError(EmailAlreadyInUseError)
+      .addError(CityNotFoundError),
   )
   .add(
     HttpApiEndpoint.post("login", "/login")
@@ -47,7 +48,7 @@ export class UsersGroup extends HttpApiGroup.make("users")
       .addError(InvalidCredentialsError),
   )
   .add(
-    HttpApiEndpoint.get("me", "/me").addSuccess(User).middleware(Authorization),
+    HttpApiEndpoint.get("me", "/me").addSuccess(Me).middleware(Authorization),
   )
   .add(
     HttpApiEndpoint.post("logout", "/logout")

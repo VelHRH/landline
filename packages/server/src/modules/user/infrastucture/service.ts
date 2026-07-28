@@ -1,7 +1,7 @@
 import { AuthResult } from "#modules/user/domain/dto/auth-result.js";
 import { SessionsRepo, UsersRepo } from "#modules/user/domain/repo.js";
 import { AuthService, SESSION_TTL } from "#modules/user/domain/service.js";
-import type { CredentialsPayload } from "@landline/domain/user/credentials";
+import type { CredentialsPayload, SignUpPayload } from "@landline/domain/user/credentials";
 import { InvalidCredentialsError, UnauthorizedError } from "@landline/domain/user/errors";
 import { User, type UserId } from "@landline/domain/user/schema";
 import * as DateTime from "effect/DateTime";
@@ -76,7 +76,7 @@ export const AuthServiceLive = Layer.effect(AuthService)(
         return new AuthResult({ token, user });
       });
 
-    const signUp = (payload: CredentialsPayload) =>
+    const signUp = (payload: SignUpPayload) =>
       Effect.gen(function*() {
         const passwordHash = yield* hashPassword(
           Redacted.value(payload.password),
@@ -84,6 +84,10 @@ export const AuthServiceLive = Layer.effect(AuthService)(
         const user = yield* usersRepo.create({
           email: payload.email,
           passwordHash: Redacted.make(passwordHash),
+          dateOfBirth: payload.dateOfBirth,
+          gender: payload.gender,
+          interestedIn: payload.interestedIn,
+          cityId: payload.cityId,
         });
         return yield* startSession(user);
       });

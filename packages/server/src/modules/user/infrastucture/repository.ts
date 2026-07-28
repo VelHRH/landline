@@ -4,15 +4,16 @@ import { UserWithCredentials } from "#modules/user/domain/schema.js";
 import * as SqlClient from "@effect/sql/SqlClient";
 import type * as SqlError from "@effect/sql/SqlError";
 import * as SqlSchema from "@effect/sql/SqlSchema";
-import { EmailAlreadyInUseError } from "@landline/domain/user/errors";
-import { User, UserId } from "@landline/domain/user/schema";
+import { CityNotFoundError, EmailAlreadyInUseError } from "@landline/domain/user/errors";
+import { Me, User, UserId } from "@landline/domain/user/schema";
 import * as Effect from "effect/Effect";
 import { flow } from "effect/Function";
 import * as Layer from "effect/Layer";
 import * as Schema from "effect/Schema";
 
-const isUniqueViolation = (error: SqlError.SqlError) =>
-  (error.cause as { code?: string } | undefined)?.code === "23505";
+const sqlStateOf = (error: SqlError.SqlError) => (error.cause as { code?: string } | undefined)?.code;
+const isUniqueViolation = (error: SqlError.SqlError) => sqlStateOf(error) === "23505";
+const isForeignKeyViolation = (error: SqlError.SqlError) => sqlStateOf(error) === "23503";
 
 export const UsersRepoLive = Layer.effect(
   UsersRepo,
@@ -55,6 +56,8 @@ export const UsersRepoLive = Layer.effect(
             SqlError: (error) =>
               isUniqueViolation(error)
                 ? new EmailAlreadyInUseError({ email: request.email })
+                : isForeignKeyViolation(error)
+                ? new CityNotFoundError({ cityId: request.cityId })
                 : Effect.die(error),
             NoSuchElementException: Effect.die,
             ParseError: Effect.die,
@@ -80,13 +83,18 @@ export const SessionsRepoLive = Layer.effect(
     });
 
     const findUser = SqlSchema.findOne({
-      Result: User,
+      Result: Me,
       Request: Schema.String,
       execute: (tokenHash) =>
         sql`
         SELECT
           users.id,
           users.email,
+          users.role,
+          users.date_of_birth,
+          users.gender,
+          users.interested_in,
+          users.city_id,
           users.created_at,
           users.updated_at
         FROM

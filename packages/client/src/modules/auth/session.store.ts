@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import * as auth from "./auth.service";
+import type { SignUpInput } from "./auth.service";
 import * as session from "./session.service";
 import type { SessionUser } from "./session.service";
 
@@ -22,8 +23,8 @@ export const useSessionStore = defineStore("session", {
       }
       return this.user;
     },
-    async signUp(email: string, password: string) {
-      const result = await auth.signUp(email, password);
+    async signUp(input: SignUpInput) {
+      const result = await auth.signUp(input);
       if (result.ok) {
         this.user = result.data;
       }

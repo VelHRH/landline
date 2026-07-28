@@ -1,19 +1,13 @@
 import { expect, layer } from "@effect/vitest";
-import { CredentialsPayload } from "@landline/domain/user/credentials";
-import { Effect, Redacted } from "effect";
-import { makeApiClient, TestServerLive } from "./harness.js";
-
-const credentials = (email: string) =>
-  new CredentialsPayload({
-    email,
-    password: Redacted.make("correct-horse-battery"),
-  });
+import { Effect } from "effect";
+import { makeApiClient, seedCity, signUpPayload, TestServerLive } from "./harness.js";
 
 // A signed-up client (own cookie jar) plus the user it belongs to.
 const signUp = (email: string) =>
   Effect.gen(function*() {
     const client = yield* makeApiClient;
-    const { user } = yield* client.users.signUp({ payload: credentials(email), headers: {} });
+    const cityId = yield* seedCity;
+    const { user } = yield* client.users.signUp({ payload: signUpPayload(email, cityId), headers: {} });
     return { client, user };
   });
 
