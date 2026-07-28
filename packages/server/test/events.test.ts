@@ -71,7 +71,10 @@ layer(TestServerLive, { excludeTestServices: true })("events", (it) => {
       yield* client.users.signUp({ payload: signUpPayload(email, cityId), headers: {} });
       yield* promoteToAdmin(email);
 
-      const created = yield* client.events.create({ payload: createPayload(cityId, "2099-06-15") });
+      // A distinct date: tests share one database and the same seeded city,
+      // and UNIQUE (city_id, date, regime) forbids a second Event on a date
+      // another test already used.
+      const created = yield* client.events.create({ payload: createPayload(cityId, "2099-08-20") });
 
       const upcoming = yield* client.events.upcoming({ urlParams: { cityId } });
 
