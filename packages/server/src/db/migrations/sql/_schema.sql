@@ -1,4 +1,15 @@
-\restrict 7uPXtVKsQvOeUZIM6KFxyg2oVIRkVJquOa1ckdfqZMrd1rF3TwTKw2d9nn6iMoV
+\restrict fiKRcTDOlrAeP65i9MFl24WtMqyM8iD4LRW9FRikIQFSs97I9qHovviJ6Ao04XP
+
+CREATE TYPE public.user_gender AS ENUM (
+    'MALE',
+    'FEMALE',
+    'NONBINARY'
+);
+
+CREATE TYPE public.user_role AS ENUM (
+    'USER',
+    'ADMIN'
+);
 
 CREATE FUNCTION public.set_updated_at() RETURNS trigger
     LANGUAGE plpgsql
@@ -74,10 +85,10 @@ CREATE TABLE public.users (
     password_hash text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    role text DEFAULT 'USER'::text NOT NULL,
+    role public.user_role DEFAULT 'USER'::public.user_role NOT NULL,
     date_of_birth date NOT NULL,
-    gender text NOT NULL,
-    interested_in text[] NOT NULL,
+    gender public.user_gender NOT NULL,
+    interested_in public.user_gender[] NOT NULL,
     city_id uuid NOT NULL
 );
 
@@ -157,9 +168,9 @@ ALTER TABLE ONLY public.sessions
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_city_id_fkey FOREIGN KEY (city_id) REFERENCES public.cities(id);
 
-\unrestrict 7uPXtVKsQvOeUZIM6KFxyg2oVIRkVJquOa1ckdfqZMrd1rF3TwTKw2d9nn6iMoV
+\unrestrict fiKRcTDOlrAeP65i9MFl24WtMqyM8iD4LRW9FRikIQFSs97I9qHovviJ6Ao04XP
 
-\restrict gPOgGOFWPvXlkgEcCiFkttBgN0Yc2GvRvbQwMxC5HzqKo1JAwJ1CqbF5q16SBd1
+\restrict KVF4PYKibCfG6xD4gaeCDUmpBfkUNZsb3pc2lDaFPGCGVwNnYU1n9018dxfNaqD
 
 INSERT INTO public.effect_sql_migrations (migration_id, created_at, name) VALUES (1, '2026-07-23 14:20:07.613845+00', 'create_rooms_table');
 INSERT INTO public.effect_sql_migrations (migration_id, created_at, name) VALUES (2, '2026-07-23 14:20:07.613845+00', 'create_users_and_sessions_tables');
@@ -167,5 +178,6 @@ INSERT INTO public.effect_sql_migrations (migration_id, created_at, name) VALUES
 INSERT INTO public.effect_sql_migrations (migration_id, created_at, name) VALUES (4, '2026-07-23 14:20:07.613845+00', 'create_chat_tables');
 INSERT INTO public.effect_sql_migrations (migration_id, created_at, name) VALUES (5, '2026-07-27 13:30:43.390487+00', 'create_cities_table');
 INSERT INTO public.effect_sql_migrations (migration_id, created_at, name) VALUES (6, '2026-07-28 09:30:47.60364+00', 'add_user_profile_and_role');
+INSERT INTO public.effect_sql_migrations (migration_id, created_at, name) VALUES (7, '2026-07-28 10:04:52.513978+00', 'role_gender_to_enums');
 
-\unrestrict gPOgGOFWPvXlkgEcCiFkttBgN0Yc2GvRvbQwMxC5HzqKo1JAwJ1CqbF5q16SBd1
+\unrestrict KVF4PYKibCfG6xD4gaeCDUmpBfkUNZsb3pc2lDaFPGCGVwNnYU1n9018dxfNaqD
