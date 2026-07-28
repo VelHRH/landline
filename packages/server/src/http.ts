@@ -3,11 +3,12 @@ import { Api } from "@landline/domain/api";
 import { Layer } from "effect";
 import { ChatModuleLive, ChatWsModuleLive } from "./modules/chat/index.js";
 import { CitiesModuleLive } from "./modules/city/index.js";
+import { EventsModuleLive } from "./modules/event/index.js";
 import { RoomsModuleLive } from "./modules/room/index.js";
 import { AuthorizationModuleLive, UsersModuleLive } from "./modules/user/index.js";
 
 const ApiLive = HttpLayerRouter.addHttpApi(Api).pipe(
-  Layer.provide([RoomsModuleLive, UsersModuleLive, ChatModuleLive, CitiesModuleLive]),
+  Layer.provide([RoomsModuleLive, UsersModuleLive, ChatModuleLive, CitiesModuleLive, EventsModuleLive]),
   Layer.provide(AuthorizationModuleLive),
 );
 
