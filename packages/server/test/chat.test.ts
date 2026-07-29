@@ -1,6 +1,7 @@
 import { expect, layer } from "@effect/vitest";
+import type { UserId } from "@landline/domain/user/schema";
 import { Effect } from "effect";
-import { makeApiClient, seedCity, signUpPayload, TestServerLive } from "./harness.js";
+import { makeApiClient, seedCity, seedEvent, seedRoom, signUpPayload, TestServerLive } from "./harness.js";
 
 // A signed-up client (own cookie jar) plus the user it belongs to.
 const signUp = (email: string) =>
@@ -11,28 +12,36 @@ const signUp = (email: string) =>
     return { client, user };
   });
 
+// A composed Room with the given members. Rooms are written by composition, not
+// by a request, so chat's membership gate is set up directly. Each Room needs
+// its own Event date: UNIQUE (city_id, date, regime).
+const roomWith = (date: string, members: ReadonlyArray<UserId>) =>
+  Effect.gen(function*() {
+    const cityId = yield* seedCity;
+    const eventId = yield* seedEvent(cityId, date);
+    return yield* seedRoom(eventId, members);
+  });
+
 layer(TestServerLive, { excludeTestServices: true })("chat (REST)", (it) => {
   it.effect("open is idempotent, history starts empty, and my-chats lists the partner", () =>
     Effect.gen(function*() {
       const alice = yield* signUp("alice-chat@example.com");
       const bob = yield* signUp("bob-chat@example.com");
 
-      const room = yield* alice.client.rooms.upsert({ payload: { name: "Chat Room" } });
-      yield* alice.client.rooms.join({ payload: { id: room.id } });
-      yield* bob.client.rooms.join({ payload: { id: room.id } });
+      const roomId = yield* roomWith("2099-11-01", [alice.user.id, bob.user.id]);
 
       const chat = yield* alice.client.chats.open({
-        payload: { roomId: room.id, partnerId: bob.user.id },
+        payload: { roomId, partnerId: bob.user.id },
       });
 
       // Same pair → same dialog, regardless of who opens or how many times.
       const again = yield* alice.client.chats.open({
-        payload: { roomId: room.id, partnerId: bob.user.id },
+        payload: { roomId, partnerId: bob.user.id },
       });
       expect(again.id).toBe(chat.id);
 
       const fromBob = yield* bob.client.chats.open({
-        payload: { roomId: room.id, partnerId: alice.user.id },
+        payload: { roomId, partnerId: alice.user.id },
       });
       expect(fromBob.id).toBe(chat.id);
 
@@ -56,12 +65,11 @@ layer(TestServerLive, { excludeTestServices: true })("chat (REST)", (it) => {
       const alice = yield* signUp("alice-outsider@example.com");
       const bob = yield* signUp("bob-outsider@example.com");
 
-      const room = yield* alice.client.rooms.upsert({ payload: { name: "Solo Room" } });
-      yield* alice.client.rooms.join({ payload: { id: room.id } });
-      // bob never joins.
+      // bob was never placed in this room.
+      const roomId = yield* roomWith("2099-11-02", [alice.user.id]);
 
       const rejection = yield* alice.client.chats
-        .open({ payload: { roomId: room.id, partnerId: bob.user.id } })
+        .open({ payload: { roomId, partnerId: bob.user.id } })
         .pipe(Effect.flip);
 
       expect(rejection._tag).toBe("NotRoomMemberError");
@@ -73,12 +81,10 @@ layer(TestServerLive, { excludeTestServices: true })("chat (REST)", (it) => {
       const bob = yield* signUp("bob-leak@example.com");
       const carol = yield* signUp("carol-leak@example.com");
 
-      const room = yield* alice.client.rooms.upsert({ payload: { name: "Private Room" } });
-      yield* alice.client.rooms.join({ payload: { id: room.id } });
-      yield* bob.client.rooms.join({ payload: { id: room.id } });
+      const roomId = yield* roomWith("2099-11-03", [alice.user.id, bob.user.id]);
 
       const chat = yield* alice.client.chats.open({
-        payload: { roomId: room.id, partnerId: bob.user.id },
+        payload: { roomId, partnerId: bob.user.id },
       });
 
       const rejection = yield* carol.client.chats

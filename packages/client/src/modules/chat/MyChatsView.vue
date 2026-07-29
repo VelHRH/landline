@@ -12,13 +12,7 @@ onMounted(() => store.loadMyChats());
 <template>
   <main class="mx-auto min-h-dvh w-full max-w-2xl px-5 py-10 sm:px-6 sm:py-14">
     <header>
-      <ButtonLink
-        :to="{ name: routeName(RouteName.ROOMS) }"
-        class="text-caption text-muted-foreground transition hover:text-foreground"
-      >
-        ← Rooms
-      </ButtonLink>
-      <h1 class="mt-4 font-medium">Your chats</h1>
+      <h1 class="font-medium">Your chats</h1>
       <p class="mt-1 text-caption text-muted-foreground">Return to a conversation.</p>
     </header>
 
@@ -30,7 +24,7 @@ onMounted(() => store.loadMyChats());
       </p>
 
       <p v-else-if="store.myChats.length === 0" class="text-caption text-muted-foreground">
-        No chats yet. Open one from a room member.
+        No chats yet. They open once your room is composed.
       </p>
 
       <ul v-else class="space-y-3">

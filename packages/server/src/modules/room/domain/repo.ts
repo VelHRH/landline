@@ -1,37 +1,13 @@
-import type { RoomNotFoundError } from "@landline/domain/room/errors";
-import { Room, RoomId, type RoomListItem } from "@landline/domain/room/schema";
-import type { User } from "@landline/domain/user/schema";
-import { UserId } from "@landline/domain/user/schema";
+import type { RoomId } from "@landline/domain/room/schema";
+import type { User, UserId } from "@landline/domain/user/schema";
 import * as Context from "effect/Context";
 import type * as Effect from "effect/Effect";
-import * as Schema from "effect/Schema";
 
-export const CreateRoomInput = Room.pipe(Schema.pick("name"));
-export type CreateRoomInput = typeof CreateRoomInput.Type;
-
-export const UpdateRoomInput = Room.pipe(Schema.pick("id", "name"));
-export type UpdateRoomInput = typeof UpdateRoomInput.Type;
-
-export const AddRoomMemberInput = Schema.Struct({
-  roomId: RoomId,
-  userId: UserId,
-});
-export type AddRoomMemberInput = typeof AddRoomMemberInput.Type;
-
+// Rooms and their membership are written by composition (the event module owns
+// that transaction, ADR-0008); this repo only reads the resulting roster.
 export class RoomsRepo extends Context.Tag("RoomsRepo")<
   RoomsRepo,
   {
-    readonly findAllForUser: (
-      userId: UserId,
-    ) => Effect.Effect<ReadonlyArray<RoomListItem>>;
-    readonly create: (input: CreateRoomInput) => Effect.Effect<Room>;
-    readonly update: (
-      input: UpdateRoomInput,
-    ) => Effect.Effect<Room, RoomNotFoundError>;
-    readonly delete: (id: RoomId) => Effect.Effect<void, RoomNotFoundError>;
-    readonly addMember: (
-      input: AddRoomMemberInput,
-    ) => Effect.Effect<void, RoomNotFoundError>;
     readonly membersAmong: (
       roomId: RoomId,
       userIds: ReadonlyArray<UserId>,

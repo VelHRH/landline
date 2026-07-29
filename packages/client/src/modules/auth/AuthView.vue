@@ -74,7 +74,7 @@ const submit = async () => {
   if (result.ok) {
     const redirect = route.query.redirect;
     await router.replace(
-      typeof redirect === "string" ? redirect : { name: routeName(RouteName.ROOMS) },
+      typeof redirect === "string" ? redirect : { name: routeName(RouteName.CHATS) },
     );
   } else {
     error.value = result.message;

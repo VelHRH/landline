@@ -2,47 +2,18 @@ import { Authorization } from "#user/http.js";
 import { User } from "#user/schema.js";
 import { HttpApiEndpoint, HttpApiGroup } from "@effect/platform";
 import * as Schema from "effect/Schema";
-import { NotRoomMemberError, RoomNotFoundError } from "./errors.js";
-import { Room, RoomId, RoomListItem } from "./schema.js";
-import { UpsertRoomPayload } from "./upsert.js";
+import { NotRoomMemberError } from "./errors.js";
+import { RoomId } from "./schema.js";
 
+// Rooms are created by composition at the Cutoff, never by a request: there is no
+// create, join or delete endpoint. Only members may read a room's roster, so a
+// non-member cannot enumerate who is inside a room they were not placed in.
 export class RoomsGroup extends HttpApiGroup.make("rooms")
-  .add(HttpApiEndpoint.get("list", "/").addSuccess(Schema.Array(RoomListItem)))
-  // Only members may read a room's roster, so a non-member cannot enumerate
-  // who is inside a room they have not joined.
   .add(
     HttpApiEndpoint.get("members", "/:roomId/members")
       .setPath(Schema.Struct({ roomId: RoomId }))
       .addSuccess(Schema.Array(User))
       .addError(NotRoomMemberError),
-  )
-  // TODO: once roles exist, creating/updating/deleting rooms via API must be
-  // admin-only; regular users only join rooms and chat.
-  .add(
-    HttpApiEndpoint.put("upsert", "/")
-      .addSuccess(Room)
-      .addError(RoomNotFoundError)
-      .setPayload(UpsertRoomPayload),
-  )
-  .add(
-    HttpApiEndpoint.post("join", "/join")
-      .setPayload(
-        Schema.Struct({
-          id: RoomId,
-        }),
-      )
-      .addSuccess(Schema.Void)
-      .addError(RoomNotFoundError),
-  )
-  .add(
-    HttpApiEndpoint.del("delete", "/")
-      .setPayload(
-        Schema.Struct({
-          id: RoomId,
-        }),
-      )
-      .addSuccess(Schema.Void)
-      .addError(RoomNotFoundError),
   )
   .middleware(Authorization)
   .prefix("/room")
