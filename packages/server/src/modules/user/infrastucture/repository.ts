@@ -1,8 +1,8 @@
 import { PgLive } from "#db/pg-client.js";
+import { isForeignKeyViolation, isUniqueViolation } from "#db/sql-errors.js";
 import { CreateSessionInput, CreateUserInput, SessionsRepo, UsersRepo } from "#modules/user/domain/repo.js";
 import { UserWithCredentials } from "#modules/user/domain/schema.js";
 import * as SqlClient from "@effect/sql/SqlClient";
-import type * as SqlError from "@effect/sql/SqlError";
 import * as SqlSchema from "@effect/sql/SqlSchema";
 import { CityNotFoundError, EmailAlreadyInUseError } from "@landline/domain/user/errors";
 import { Me, User, UserId } from "@landline/domain/user/schema";
@@ -10,10 +10,6 @@ import * as Effect from "effect/Effect";
 import { flow } from "effect/Function";
 import * as Layer from "effect/Layer";
 import * as Schema from "effect/Schema";
-
-const sqlStateOf = (error: SqlError.SqlError) => (error.cause as { code?: string } | undefined)?.code;
-const isUniqueViolation = (error: SqlError.SqlError) => sqlStateOf(error) === "23505";
-const isForeignKeyViolation = (error: SqlError.SqlError) => sqlStateOf(error) === "23503";
 
 export const UsersRepoLive = Layer.effect(
   UsersRepo,
@@ -95,6 +91,7 @@ export const SessionsRepoLive = Layer.effect(
           users.gender,
           users.interested_in::text[] AS interested_in,
           users.city_id,
+          users.drop_streak,
           users.created_at,
           users.updated_at
         FROM
