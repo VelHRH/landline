@@ -93,11 +93,18 @@ describe("compose", () => {
 
     const plan = compose(pool, configWith({}));
 
+    // A full room places as many as viability allows: all 6 women plus 54 men.
     expect(plan.rooms).toHaveLength(1);
-    expect(plan.dropped).toHaveLength(30);
-    expect(idsOf(plan.dropped)).toEqual(idsOf(men(100, 30)));
-    // The scarce side is never the surplus.
+    expect(plan.rooms[0]?.members).toHaveLength(60);
+    expect(plan.dropped).toHaveLength(16);
+
+    // The surplus comes off the bottom of the priority order, so nobody with a
+    // streak — or an earlier reservation — is dropped ahead of them.
+    const droppedIds = new Set(idsOf(plan.dropped));
     expect(plan.dropped.every((c) => c.gender === Gender.MALE)).toBe(true);
+    expect(idsOf(men(100, 30)).filter((id) => droppedIds.has(id))).toHaveLength(16);
+    expect(men(200, 20).some((c) => droppedIds.has(c.userId))).toBe(false);
+    expect(men(300, 20).some((c) => droppedIds.has(c.userId))).toBe(false);
   });
 
   it("defers a bracket that cannot fill even a floor-sized viable room", () => {

@@ -65,8 +65,7 @@ export const ageAt = (dateOfBirth: string, reference: Date): number => {
   return beforeBirthday ? years - 1 : years;
 };
 
-// Two participants are compatible iff each one's gender is in the other's
-// interestedIn set — the only relation the algorithm reasons about (ADR-0008).
+// The only relation the algorithm reasons about (ADR-0008).
 const compatible = (a: Candidate, b: Candidate): boolean =>
   a.userId !== b.userId
   && a.interestedIn.includes(b.gender)
@@ -77,9 +76,9 @@ const compatibleCount = (
   among: ReadonlyArray<Candidate>,
 ): number => among.reduce((total, other) => compatible(candidate, other) ? total + 1 : total, 0);
 
-// Placement priority: whoever has been dropped most times in a row since their
-// last placement goes first, earliest reserver breaks the tie. Surplus is
-// whatever this ordering leaves at the bottom (ADR-0008).
+// Whoever has been dropped most times in a row since their last placement goes
+// first, earliest reserver breaks the tie; surplus is what this ordering leaves
+// at the bottom (ADR-0008).
 const byPlacementPriority = (a: Candidate, b: Candidate): number =>
   b.dropStreak - a.dropStreak || a.reservedAt - b.reservedAt;
 
@@ -99,17 +98,6 @@ const viableCore = (
   }
 };
 
-// How many to pull into the next Room. Capped at `maxSize`, but when the cap
-// would strand a remainder below the target minimum, the Room shrinks so the
-// remainder reaches it instead of being dropped as a runt.
-const roomTarget = (poolSize: number, config: RegimeConfig): number => {
-  if (poolSize <= config.maxSize) return poolSize;
-  const remainder = poolSize - config.maxSize;
-  return remainder >= config.minSize
-    ? config.maxSize
-    : Math.max(config.floor, poolSize - config.minSize);
-};
-
 // Grows one Room out of the pool: seeded with the highest-priority reserver, then
 // repeatedly adding whoever is compatible with the most of the Room so far
 // (priority breaks ties). That self-balances a lopsided pool — the scarce side's
@@ -117,10 +105,10 @@ const roomTarget = (poolSize: number, config: RegimeConfig): number => {
 // result is pruned to its viable core before being accepted.
 const buildRoom = (
   pool: ReadonlyArray<Candidate>,
+  target: number,
   config: RegimeConfig,
 ): ReadonlyArray<Candidate> | null => {
   const ordered = [...pool].sort(byPlacementPriority);
-  const target = roomTarget(ordered.length, config);
   const room = [ordered[0]!];
   const rest = ordered.slice(1);
 
@@ -142,6 +130,39 @@ const buildRoom = (
   return viable.length >= config.floor ? viable : null;
 };
 
+const without = (
+  pool: ReadonlyArray<Candidate>,
+  room: ReadonlyArray<Candidate>,
+  config: RegimeConfig,
+): ReadonlyArray<Candidate> => {
+  const placed = new Set(room.map((member) => member.userId));
+  return viableCore(pool.filter((candidate) => !placed.has(candidate.userId)), config.rounds);
+};
+
+// Carves the next Room off the pool, filling it to `maxSize` — placing as many as
+// possible is the goal. A full Room can strand a remainder that is placeable but
+// too small for a Room of its own; when that happens, a smaller Room that leaves
+// the remainder a viable one of its own is taken instead, but only if the two
+// together place more people than the full Room alone.
+const carveRoom = (
+  pool: ReadonlyArray<Candidate>,
+  config: RegimeConfig,
+): ReadonlyArray<Candidate> | null => {
+  const full = buildRoom(pool, Math.min(pool.length, config.maxSize), config);
+  if (full === null) return null;
+
+  const stranded = without(pool, full, config);
+  if (stranded.length === 0 || stranded.length >= config.floor) return full;
+
+  const split = buildRoom(pool, Math.max(config.floor, pool.length - config.minSize), config);
+  if (split === null) return full;
+
+  const remainder = without(pool, split, config);
+  return remainder.length >= config.floor && split.length + remainder.length > full.length
+    ? split
+    : full;
+};
+
 // Rooms never mix brackets, so each bracket is packed independently: carve viable
 // Rooms off the core until what is left cannot fill one. A bracket that cannot
 // fill even a floor-sized viable Room yields no Rooms at all — everyone in it is
@@ -155,14 +176,10 @@ const composeBracket = (
   let remaining = viableCore(pool, config.rounds);
 
   while (remaining.length >= config.floor) {
-    const members = buildRoom(remaining, config);
+    const members = carveRoom(remaining, config);
     if (members === null) break;
     rooms.push({ ageBracket, members });
-    const placed = new Set(members.map((member) => member.userId));
-    remaining = viableCore(
-      remaining.filter((candidate) => !placed.has(candidate.userId)),
-      config.rounds,
-    );
+    remaining = without(remaining, members, config);
   }
 
   return rooms;

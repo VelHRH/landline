@@ -8,7 +8,7 @@ import { EventStatus } from "@landline/domain/event/enums";
 import { EventId } from "@landline/domain/event/schema";
 import { ReservationOutcome } from "@landline/domain/reservation/enums";
 import { ReservationId } from "@landline/domain/reservation/schema";
-import type { RoomId } from "@landline/domain/room/schema";
+import { RoomId } from "@landline/domain/room/schema";
 import { Gender } from "@landline/domain/user/enums";
 import { DateOfBirth, UserId } from "@landline/domain/user/schema";
 import * as DateTime from "effect/DateTime";
@@ -90,15 +90,17 @@ export const CompositionRepoLive = Layer.effect(
           id
       `.pipe(Effect.map((rows) => rows.length > 0));
 
-    const insertRoom = (eventId: EventId, ageBracket: string) =>
-      sql`
+    const insertRoom = SqlSchema.single({
+      Result: Schema.Struct({ id: RoomId }),
+      Request: Schema.Struct({ eventId: EventId, ageBracket: Schema.String }),
+      execute: (request) =>
+        sql`
         INSERT INTO
-          rooms (event_id, age_bracket)
-        VALUES
-          (${eventId}, ${ageBracket})
+          rooms ${sql.insert(request)}
         RETURNING
           id
-      `.pipe(Effect.map((rows) => (rows[0] as { id: string }).id as RoomId));
+      `,
+    });
 
     const place = (roomId: RoomId, members: ReadonlyArray<Candidate>) =>
       Effect.gen(function*() {
@@ -182,7 +184,10 @@ export const CompositionRepoLive = Layer.effect(
         );
 
         for (const room of result.rooms) {
-          const roomId = yield* insertRoom(event.id, room.ageBracket);
+          const { id: roomId } = yield* insertRoom({
+            eventId: event.id,
+            ageBracket: room.ageBracket,
+          });
           yield* place(roomId, room.members);
         }
         if (result.dropped.length > 0) {
