@@ -30,10 +30,12 @@ export class Profile extends Schema.Class<Profile>("Profile")({
   cityId: CityId,
 }) {}
 
-// The authenticated user's own view of themselves: identity plus role and
-// profile. Only ever returned to the user it describes (the `me` endpoint).
+// The authenticated user's own view of themselves: identity plus role,
+// profile, and drop-streak (the fairness counter composition reads). Only ever
+// returned to the user it describes (the `me` endpoint).
 export class Me extends Schema.Class<Me>("Me")({
   ...User.fields,
   role: Schema.Enums(Role),
   ...Profile.fields,
+  dropStreak: Schema.Int,
 }) {}

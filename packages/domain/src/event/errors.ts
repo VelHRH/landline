@@ -17,3 +17,18 @@ export class ForbiddenError extends Schema.TaggedError<ForbiddenError>(
     return "You are not allowed to perform this action";
   }
 }
+
+// Raised when an action references an Event id that does not exist.
+export class EventNotFoundError extends Schema.TaggedError<EventNotFoundError>(
+  "EventNotFoundError",
+)(
+  "EventNotFoundError",
+  { eventId: Schema.String },
+  HttpApiSchema.annotations({
+    status: 404,
+  }),
+) {
+  get message() {
+    return `No event with id ${this.eventId}`;
+  }
+}
