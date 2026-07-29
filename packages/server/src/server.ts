@@ -4,6 +4,7 @@ import { Config, Layer } from "effect";
 import { createServer } from "node:http";
 import * as path from "node:path";
 import { AllRoutes } from "./http.js";
+import { CompositionWorkerLive } from "./modules/event/infrastucture/composition-worker.js";
 
 const HttpLive = HttpLayerRouter.serve(AllRoutes)
   .pipe(
@@ -20,6 +21,7 @@ const HttpLive = HttpLayerRouter.serve(AllRoutes)
     Layer.provide(NodeContext.layer),
   );
 
-const program = Layer.launch(HttpLive);
+// The composition worker runs alongside the HTTP server, not behind a route.
+const program = Layer.launch(Layer.merge(HttpLive, CompositionWorkerLive));
 
 NodeRuntime.runMain(program);

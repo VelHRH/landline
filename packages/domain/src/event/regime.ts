@@ -7,6 +7,10 @@ export interface AgeBracket {
   readonly maxAge: number | null;
 }
 
+// The label a composed Room carries for the bracket it was built within.
+export const ageBracketLabel = (bracket: AgeBracket): string =>
+  bracket.maxAge === null ? `${bracket.minAge}+` : `${bracket.minAge}-${bracket.maxAge}`;
+
 // The composition params a Regime runs with. An Event may override any of these
 // per-event; a null override inherits the value here.
 export interface RegimeConfig {

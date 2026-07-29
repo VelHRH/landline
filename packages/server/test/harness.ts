@@ -6,8 +6,11 @@ import { NodeContext, NodeHttpServer } from "@effect/platform-node";
 import { SqlClient } from "@effect/sql";
 import { Api } from "@landline/domain/api";
 import type { CityId } from "@landline/domain/city/schema";
+import type { EventId } from "@landline/domain/event/schema";
+import type { RoomId } from "@landline/domain/room/schema";
 import { SignUpPayload } from "@landline/domain/user/credentials";
 import { Gender } from "@landline/domain/user/enums";
+import type { UserId } from "@landline/domain/user/schema";
 import { Effect, Layer, Ref, Schema } from "effect";
 import { createServer } from "node:http";
 
@@ -52,15 +55,58 @@ export const seedCity = Effect.gen(function*() {
 export const signUpPayload = (
   email: string,
   cityId: CityId,
-  overrides?: Partial<{ interestedIn: ReadonlyArray<Gender> }>,
+  overrides?: Partial<{
+    interestedIn: ReadonlyArray<Gender>;
+    gender: Gender;
+    dateOfBirth: string;
+  }>,
 ) =>
   Schema.decodeUnknownSync(SignUpPayload)({
     email,
     password: "correct-horse-battery",
-    dateOfBirth: "1995-06-15",
-    gender: Gender.FEMALE,
+    dateOfBirth: overrides?.dateOfBirth ?? "1995-06-15",
+    gender: overrides?.gender ?? Gender.FEMALE,
     interestedIn: overrides?.interestedIn ?? [Gender.MALE],
     cityId,
+  });
+
+// Inserts an Event directly: some suites need a Room (and so an Event) without
+// going through the admin-only create endpoint.
+export const seedEvent = (cityId: CityId, date: string) =>
+  Effect.gen(function*() {
+    const sql = yield* SqlClient.SqlClient;
+    const rows = yield* sql`
+      INSERT INTO
+        events (city_id, date, starts_at, reservation_deadline)
+      VALUES
+        (${cityId}, ${date}, ${`${date}T20:00:00Z`}, ${`${date}T18:00:00Z`})
+      RETURNING
+        id
+    `;
+    return (rows[0] as { id: string }).id as EventId;
+  });
+
+// Inserts a composed Room with its members: Rooms are written by composition,
+// never by a request, so tests that only need a roster seed one directly.
+export const seedRoom = (eventId: EventId, userIds: ReadonlyArray<UserId>) =>
+  Effect.gen(function*() {
+    const sql = yield* SqlClient.SqlClient;
+    const rows = yield* sql`
+      INSERT INTO
+        rooms (event_id, age_bracket)
+      VALUES
+        (${eventId}, '18-29')
+      RETURNING
+        id
+    `;
+    const roomId = (rows[0] as { id: string }).id as RoomId;
+    if (userIds.length > 0) {
+      yield* sql`
+        INSERT INTO
+          room_members ${sql.insert(userIds.map((userId) => ({ roomId, userId })))}
+      `;
+    }
+    return roomId;
   });
 
 // A fresh typed client with its own cookie jar — the same derived client the

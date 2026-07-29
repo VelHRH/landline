@@ -1,84 +1,207 @@
+import { CompositionService } from "#modules/event/domain/composition-service.js";
+import { CompositionServiceLive } from "#modules/event/infrastucture/composition-service.js";
+import { SqlClient } from "@effect/sql";
 import { expect, layer } from "@effect/vitest";
-import { Effect } from "effect";
+import type { CityId } from "@landline/domain/city/schema";
+import { CreateEventPayload } from "@landline/domain/event/create";
+import { EventStatus } from "@landline/domain/event/enums";
+import type { EventId } from "@landline/domain/event/schema";
+import { ReservationOutcome } from "@landline/domain/reservation/enums";
+import type { RoomId } from "@landline/domain/room/schema";
+import { Gender } from "@landline/domain/user/enums";
+import { Effect, Schema } from "effect";
 import { makeApiClient, seedCity, signUpPayload, TestServerLive } from "./harness.js";
 
-// A signed-up client (own cookie jar) standing in for one user's browser.
-const signedUpClient = (email: string) =>
+const promoteToAdmin = (email: string) =>
+  Effect.flatMap(
+    SqlClient.SqlClient,
+    (sql) =>
+      sql`
+        UPDATE users
+        SET
+          role = 'ADMIN'
+        WHERE
+          email = ${email}
+      `,
+  );
+
+// Pushes the Cutoff into the past and shrinks the composition params, so a
+// handful of sign-ups is enough to form a viable Room. Reservations are made
+// before this runs — the endpoint refuses them after the Cutoff.
+const makeDue = (eventId: EventId, params: { rounds: number; floor: number; size: number }) =>
+  Effect.flatMap(
+    SqlClient.SqlClient,
+    (sql) =>
+      sql`
+        UPDATE events
+        SET
+          reservation_deadline = now() - interval '1 minute',
+          rounds = ${params.rounds},
+          floor = ${params.floor},
+          min_size = ${params.floor},
+          max_size = ${params.size}
+        WHERE
+          id = ${eventId}
+      `,
+  );
+
+const dropStreakOf = (email: string) =>
+  Effect.flatMap(
+    SqlClient.SqlClient,
+    (sql) =>
+      sql`
+        SELECT
+          drop_streak
+        FROM
+          users
+        WHERE
+          email = ${email}
+      `,
+  ).pipe(Effect.map((rows) => (rows[0] as { dropStreak: number }).dropStreak));
+
+const roomCountOf = (eventId: EventId) =>
+  Effect.flatMap(
+    SqlClient.SqlClient,
+    (sql) =>
+      sql`
+        SELECT
+          id
+        FROM
+          rooms
+        WHERE
+          event_id = ${eventId}
+      `,
+  ).pipe(Effect.map((rows) => rows.length));
+
+// One reconciliation cycle — exactly what the worker fiber runs on every tick.
+const runWorkerCycle = Effect.flatMap(CompositionService, (service) => service.composeDue()).pipe(
+  Effect.provide(CompositionServiceLive),
+);
+
+const createPayload = (cityId: CityId, date: string) => Schema.decodeUnknownSync(CreateEventPayload)({ cityId, date });
+
+// A signed-up participant with their own cookie jar, already reserved.
+const reserver = (eventId: EventId, email: string, cityId: CityId, gender: Gender) =>
   Effect.gen(function*() {
     const client = yield* makeApiClient;
-    const cityId = yield* seedCity;
-    yield* client.users.signUp({ payload: signUpPayload(email, cityId), headers: {} });
+    const interestedIn = gender === Gender.MALE ? [Gender.FEMALE] : [Gender.MALE];
+    yield* client.users.signUp({
+      payload: signUpPayload(email, cityId, { gender, interestedIn }),
+      headers: {},
+    });
+    yield* client.reservations.reserve({ path: { eventId } });
     return client;
   });
 
-layer(TestServerLive, { excludeTestServices: true })("rooms", (it) => {
-  it.effect("create → list → join → members exposes the roster to members", () =>
+const adminFor = (email: string, cityId: CityId) =>
+  Effect.gen(function*() {
+    const client = yield* makeApiClient;
+    yield* client.users.signUp({ payload: signUpPayload(email, cityId), headers: {} });
+    yield* promoteToAdmin(email);
+    return client;
+  });
+
+layer(TestServerLive, { excludeTestServices: true })("room composition", (it) => {
+  it.effect("the worker composes a due Event into a Room and resolves every Reservation", () =>
     Effect.gen(function*() {
-      const alice = yield* signedUpClient("alice-members@example.com");
-      const bob = yield* signedUpClient("bob-members@example.com");
+      const cityId = yield* seedCity;
+      const adminClient = yield* adminFor("compose-admin@example.com", cityId);
+      const event = yield* adminClient.events.create({ payload: createPayload(cityId, "2099-10-01") });
 
-      const room = yield* alice.rooms.upsert({ payload: { name: "Neon Room" } });
-      expect(room.name).toBe("Neon Room");
+      const alice = yield* reserver(event.id, "compose-alice@example.com", cityId, Gender.FEMALE);
+      yield* reserver(event.id, "compose-bob@example.com", cityId, Gender.MALE);
+      yield* reserver(event.id, "compose-carol@example.com", cityId, Gender.FEMALE);
+      yield* reserver(event.id, "compose-dave@example.com", cityId, Gender.MALE);
 
-      // Before joining, the list reports the room as not joined for alice.
-      const listed = yield* alice.rooms.list();
-      expect(listed.find((r) => r.id === room.id)?.joined).toBe(false);
+      const outsider = yield* makeApiClient;
+      yield* outsider.users.signUp({
+        payload: signUpPayload("compose-outsider@example.com", cityId),
+        headers: {},
+      });
 
-      yield* alice.rooms.join({ payload: { id: room.id } });
-      yield* bob.rooms.join({ payload: { id: room.id } });
+      yield* makeDue(event.id, { rounds: 1, floor: 4, size: 4 });
 
-      // After joining, the same list now reports it as joined — this is what
-      // hides the Join button on the client.
-      const afterJoin = yield* alice.rooms.list();
-      expect(afterJoin.find((r) => r.id === room.id)?.joined).toBe(true);
+      const summaries = yield* runWorkerCycle;
+      const summary = summaries.find((s) => s.eventId === event.id);
+      expect(summary?.claimed).toBe(true);
+      expect(summary?.rooms).toBe(1);
+      expect(summary?.placed).toBe(4);
+      expect(summary?.cancelled).toBe(false);
 
-      // Both members see each other — the two-users-in-a-room requirement.
-      const members = yield* alice.rooms.members({ path: { roomId: room.id } });
-      const emails = members.map((m) => m.email).sort();
-      expect(emails).toEqual(["alice-members@example.com", "bob-members@example.com"]);
+      // The Event has advanced out of SCHEDULED.
+      const upcoming = yield* adminClient.events.upcoming({ urlParams: { cityId } });
+      expect(upcoming.find((e) => e.id === event.id)?.status).toBe(EventStatus.COMPOSED);
 
-      const asSeenByBob = yield* bob.rooms.members({ path: { roomId: room.id } });
-      expect(asSeenByBob.map((m) => m.email).sort()).toEqual(emails);
-    }));
+      // Every Reservation is resolved, all into the same Room.
+      const reservations = yield* adminClient.reservations.list({ path: { eventId: event.id } });
+      expect(reservations).toHaveLength(4);
+      expect(reservations.every((r) => r.outcome === ReservationOutcome.PLACED)).toBe(true);
+      const roomIds = new Set(reservations.map((r) => r.placedRoomId));
+      expect(roomIds.size).toBe(1);
+      const roomId = [...roomIds][0] as RoomId;
 
-  it.effect("a non-member cannot read the roster", () =>
-    Effect.gen(function*() {
-      const owner = yield* signedUpClient("owner-leak@example.com");
-      const outsider = yield* signedUpClient("outsider-leak@example.com");
+      // A placed member sees the roster composition built.
+      const members = yield* alice.rooms.members({ path: { roomId } });
+      expect(members.map((m) => m.email).sort()).toEqual([
+        "compose-alice@example.com",
+        "compose-bob@example.com",
+        "compose-carol@example.com",
+        "compose-dave@example.com",
+      ]);
 
-      const room = yield* owner.rooms.upsert({ payload: { name: "Members Only" } });
-      yield* owner.rooms.join({ payload: { id: room.id } });
-
-      const rejection = yield* outsider.rooms
-        .members({ path: { roomId: room.id } })
-        .pipe(Effect.flip);
-
+      // Someone who was never placed cannot read it.
+      const rejection = yield* outsider.rooms.members({ path: { roomId } }).pipe(Effect.flip);
       expect(rejection._tag).toBe("NotRoomMemberError");
+
+      // Placement resets the fairness counter.
+      expect(yield* dropStreakOf("compose-alice@example.com")).toBe(0);
+
+      // A second cycle claims nothing: the transition happens once.
+      const again = yield* runWorkerCycle;
+      expect(again.find((s) => s.eventId === event.id)).toBeUndefined();
+      expect(yield* roomCountOf(event.id)).toBe(1);
     }));
 
-  it.effect("members requires a session", () =>
+  it.effect("an Event that forms no viable Room is cancelled and its reservers deferred", () =>
     Effect.gen(function*() {
-      const anon = yield* makeApiClient;
-      const owner = yield* signedUpClient("owner-guard@example.com");
+      const cityId = yield* seedCity;
+      const adminClient = yield* adminFor("cancel-admin@example.com", cityId);
+      const event = yield* adminClient.events.create({ payload: createPayload(cityId, "2099-10-02") });
 
-      const room = yield* owner.rooms.upsert({ payload: { name: "Guarded" } });
+      // Two men interested in women: no compatible pair exists, so no Room can
+      // be viable at any size.
+      yield* reserver(event.id, "cancel-one@example.com", cityId, Gender.MALE);
+      yield* reserver(event.id, "cancel-two@example.com", cityId, Gender.MALE);
 
-      const rejection = yield* anon.rooms
-        .members({ path: { roomId: room.id } })
-        .pipe(Effect.flip);
+      yield* makeDue(event.id, { rounds: 1, floor: 2, size: 4 });
 
-      expect(rejection._tag).toBe("UnauthorizedError");
+      const summaries = yield* runWorkerCycle;
+      const summary = summaries.find((s) => s.eventId === event.id);
+      expect(summary?.rooms).toBe(0);
+      expect(summary?.dropped).toBe(2);
+      expect(summary?.cancelled).toBe(true);
+
+      const upcoming = yield* adminClient.events.upcoming({ urlParams: { cityId } });
+      expect(upcoming.find((e) => e.id === event.id)?.status).toBe(EventStatus.CANCELLED);
+
+      const reservations = yield* adminClient.reservations.list({ path: { eventId: event.id } });
+      expect(reservations.every((r) => r.outcome === ReservationOutcome.DROPPED)).toBe(true);
+      expect(reservations.every((r) => r.placedRoomId === null)).toBe(true);
+
+      // A deferral increments the fairness counter, so they go first next time.
+      expect(yield* dropStreakOf("cancel-one@example.com")).toBe(1);
+      expect(yield* roomCountOf(event.id)).toBe(0);
     }));
 
-  it.effect("joining the same room twice is idempotent", () =>
+  it.effect("an Event whose Cutoff has not passed is left alone", () =>
     Effect.gen(function*() {
-      const user = yield* signedUpClient("idempotent-join@example.com");
+      const cityId = yield* seedCity;
+      const adminClient = yield* adminFor("future-admin@example.com", cityId);
+      const event = yield* adminClient.events.create({ payload: createPayload(cityId, "2099-10-03") });
 
-      const room = yield* user.rooms.upsert({ payload: { name: "Join Twice" } });
-      yield* user.rooms.join({ payload: { id: room.id } });
-      yield* user.rooms.join({ payload: { id: room.id } });
+      const summaries = yield* runWorkerCycle;
 
-      const members = yield* user.rooms.members({ path: { roomId: room.id } });
-      expect(members).toHaveLength(1);
+      expect(summaries.find((s) => s.eventId === event.id)).toBeUndefined();
+      expect(yield* roomCountOf(event.id)).toBe(0);
     }));
 });

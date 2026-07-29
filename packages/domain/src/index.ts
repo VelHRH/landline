@@ -19,7 +19,6 @@ export * from "./reservation/schema.js";
 export * from "./room/errors.js";
 export * from "./room/http.js";
 export * from "./room/schema.js";
-export * from "./room/upsert.js";
 export * from "./user/credentials.js";
 export * from "./user/enums.js";
 export * from "./user/errors.js";
