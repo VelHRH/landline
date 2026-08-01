@@ -3,5 +3,6 @@
 export enum ButtonVariant {
   PRIMARY = "PRIMARY",
   SECONDARY = "SECONDARY",
+  TERTIARY = "TERTIARY",
   LINK = "LINK",
 }
