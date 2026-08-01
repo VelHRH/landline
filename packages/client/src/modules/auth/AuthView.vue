@@ -1,9 +1,15 @@
 <script setup lang="ts">
 import { Gender } from "@landline/domain/user/enums";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useForm } from "vee-validate";
 import { RouteName, routeName } from "@/router";
 import CityTypeahead from "@/modules/city/CityTypeahead.vue";
+import {
+  credentialsValidationSchema,
+  signUpValidationSchema,
+  type AuthFormValues,
+} from "./auth.service";
 import { useSessionStore } from "./session.store";
 import Button from "@/ui/button/Button.vue";
 import { ButtonVariant } from "@/ui/button/button-variant";
@@ -25,18 +31,35 @@ const router = useRouter();
 const route = useRoute();
 
 const mode = ref<AuthMode>(AuthMode.Login);
-const email = ref("");
-const password = ref("");
-const dateOfBirth = ref("");
-const gender = ref<Gender | "">("");
-const interestedIn = ref<Gender[]>([]);
-const cityId = ref<string | null>(null);
-const error = ref<string | null>(null);
-const pending = ref(false);
+const validationSchema = computed(() =>
+  mode.value === AuthMode.Login ? credentialsValidationSchema : signUpValidationSchema,
+);
+
+const { defineField, errors, handleSubmit, isSubmitting, resetForm, values } =
+  useForm<AuthFormValues>({
+    initialValues: {
+      email: "",
+      password: "",
+      dateOfBirth: "",
+      gender: "",
+      interestedIn: [],
+      cityId: null,
+    },
+    validationSchema,
+  });
+
+const [email] = defineField("email");
+const [password] = defineField("password");
+const [dateOfBirth] = defineField("dateOfBirth");
+const [gender] = defineField("gender");
+const [interestedIn] = defineField("interestedIn");
+const [cityId] = defineField("cityId");
+const submitError = ref<string | null>(null);
 
 const toggleMode = () => {
   mode.value = mode.value === AuthMode.Login ? AuthMode.Signup : AuthMode.Login;
-  error.value = null;
+  submitError.value = null;
+  resetForm({ values: { ...values } });
 };
 
 const toggleInterested = (value: Gender) => {
@@ -45,46 +68,34 @@ const toggleInterested = (value: Gender) => {
     : [...interestedIn.value, value];
 };
 
-const submit = async () => {
-  if (pending.value) return;
-
-  if (mode.value === AuthMode.Signup) {
-    if (!dateOfBirth.value || gender.value === "" || interestedIn.value.length === 0 || !cityId.value) {
-      error.value = "Fill in your date of birth, gender, who you're interested in, and your city";
-      return;
-    }
-  }
-
-  pending.value = true;
-  error.value = null;
-
+const submit = handleSubmit(async (formValues) => {
+  submitError.value = null;
   const result =
     mode.value === AuthMode.Login
-      ? await session.login(email.value, password.value)
+      ? await session.login(formValues.email, formValues.password)
       : await session.signUp({
-          email: email.value,
-          password: password.value,
-          dateOfBirth: dateOfBirth.value,
-          gender: gender.value as Gender,
-          interestedIn: interestedIn.value,
-          cityId: cityId.value as string,
+          email: formValues.email,
+          password: formValues.password,
+          dateOfBirth: formValues.dateOfBirth,
+          gender: formValues.gender as Gender,
+          interestedIn: formValues.interestedIn,
+          cityId: formValues.cityId as string,
         });
 
-  pending.value = false;
   if (result.ok) {
     const redirect = route.query.redirect;
     await router.replace(
       typeof redirect === "string" ? redirect : { name: routeName(RouteName.CHATS) },
     );
   } else {
-    error.value = result.message;
+    submitError.value = result.message;
   }
-};
+});
 </script>
 
 <template>
   <main class="flex min-h-dvh items-center justify-center px-6 py-16">
-    <form class="w-full max-w-sm" novalidate @submit.prevent="submit">
+    <form class="w-full max-w-sm" novalidate @submit="submit">
       <h1 class="font-medium">
         {{ mode === AuthMode.Login ? "Log in" : "Sign up" }}
       </h1>
@@ -93,13 +104,21 @@ const submit = async () => {
       </p>
 
       <div class="mt-10 space-y-5">
-        <Input v-model="email" label="Email" type="email" autocomplete="email" required />
+        <Input
+          v-model="email"
+          label="Email"
+          type="email"
+          autocomplete="email"
+          required
+          :error="errors.email"
+        />
         <Input
           v-model="password"
           label="Password"
           type="password"
           :autocomplete="mode === AuthMode.Login ? 'current-password' : 'new-password'"
           required
+          :error="errors.password"
         />
 
         <template v-if="mode === AuthMode.Signup">
@@ -109,6 +128,7 @@ const submit = async () => {
             type="date"
             autocomplete="bday"
             required
+            :error="errors.dateOfBirth"
           />
 
           <label class="block">
@@ -116,6 +136,7 @@ const submit = async () => {
             <select
               v-model="gender"
               required
+              :aria-invalid="errors.gender ? 'true' : undefined"
               class="w-full rounded-md border border-input bg-card px-3.5 py-2.5 text-foreground transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/40"
             >
               <option value="" disabled>Select…</option>
@@ -123,6 +144,9 @@ const submit = async () => {
                 {{ option.label }}
               </option>
             </select>
+            <span v-if="errors.gender" class="mt-2 block text-caption text-destructive">
+              {{ errors.gender }}
+            </span>
           </label>
 
           <fieldset>
@@ -142,15 +166,23 @@ const submit = async () => {
                 {{ option.label }}
               </label>
             </div>
+            <p v-if="errors.interestedIn" class="mt-2 text-caption text-destructive">
+              {{ errors.interestedIn }}
+            </p>
           </fieldset>
 
           <CityTypeahead v-model="cityId" />
+          <p v-if="errors.cityId" class="-mt-3 text-caption text-destructive">
+            {{ errors.cityId }}
+          </p>
         </template>
       </div>
 
-      <p v-if="error" role="alert" class="mt-4 text-caption text-destructive">{{ error }}</p>
+      <p v-if="submitError" role="alert" class="mt-4 text-caption text-destructive">
+        {{ submitError }}
+      </p>
 
-      <Button type="submit" :disabled="pending" class="mt-8 w-full">
+      <Button type="submit" :disabled="isSubmitting" class="mt-8 w-full">
         {{ mode === AuthMode.Login ? "Log in" : "Create account" }}
       </Button>
 

@@ -14,6 +14,7 @@ withDefaults(
 );
 
 const query = ref("");
+const selectedLabel = ref<string | null>(null);
 const options = ref<ReadonlyArray<CityOption>>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
@@ -48,8 +49,11 @@ const run = async (text: string) => {
 };
 
 watch(query, (text) => {
+  if (selectedId.value !== null && text === selectedLabel.value) return;
+
   // Typing invalidates any prior resolution until a city is picked again.
   selectedId.value = null;
+  selectedLabel.value = null;
   if (debounce) clearTimeout(debounce);
 
   const trimmed = text.trim();
@@ -62,6 +66,7 @@ watch(query, (text) => {
 
 const select = (option: CityOption) => {
   selectedId.value = option.id;
+  selectedLabel.value = option.label;
   query.value = option.label;
   reset();
 };
