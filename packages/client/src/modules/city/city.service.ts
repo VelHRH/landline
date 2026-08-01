@@ -1,6 +1,7 @@
 import { Effect } from "effect";
 import type { ApiResult } from "@/lib/api-client";
 import { err, ok, runApi } from "@/lib/api-client";
+import { translate } from "@/lib/i18n";
 
 // Plain view for components: branded CityId collapsed to a string (ADR-0002).
 export interface CityOption {
@@ -22,10 +23,10 @@ export const searchCities = (
             id: city.id,
             name: city.name,
             country: city.country,
-            label: `${city.name}, ${city.country}`,
+            label: translate("city.option", { city: city.name, country: city.country }),
           })),
-        )
+        ),
       ),
-      Effect.catchAll(() => Effect.succeed(err("Couldn't search cities, try again"))),
+      Effect.catchAll(() => Effect.succeed(err(translate("errors.citySearch")))),
     ),
   );

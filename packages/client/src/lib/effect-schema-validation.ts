@@ -3,6 +3,7 @@ import type { GenericObject, TypedSchema } from "vee-validate";
 
 export const toVeeValidationSchema = <Values extends GenericObject>(
   schema: Schema.Schema.AnyNoContext,
+  messageForPath: (path: string | undefined) => string,
 ): TypedSchema<Values, Values> => {
   const standardSchema = Schema.standardSchemaV1(schema);
 
@@ -21,7 +22,7 @@ export const toVeeValidationSchema = <Values extends GenericObject>(
         const path = issue.path
           ?.map((segment) => String(typeof segment === "object" ? segment.key : segment))
           .join(".");
-        errors.set(path, [...(errors.get(path) ?? []), issue.message]);
+        errors.set(path, [...(errors.get(path) ?? []), messageForPath(path)]);
       }
 
       return {

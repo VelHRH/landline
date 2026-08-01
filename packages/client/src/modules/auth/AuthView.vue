@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Gender } from "@landline/domain/user/enums";
 import { computed, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import { useForm } from "vee-validate";
 import { RouteName, routeName } from "@/router";
@@ -20,15 +21,16 @@ enum AuthMode {
   Signup = "signup",
 }
 
-const genderOptions: ReadonlyArray<{ value: Gender; label: string }> = [
-  { value: Gender.FEMALE, label: "Woman" },
-  { value: Gender.MALE, label: "Man" },
-  { value: Gender.NONBINARY, label: "Non-binary" },
-];
-
 const session = useSessionStore();
 const router = useRouter();
 const route = useRoute();
+const { t } = useI18n();
+
+const genderOptions = computed<ReadonlyArray<{ value: Gender; label: string }>>(() => [
+  { value: Gender.FEMALE, label: t("gender.female") },
+  { value: Gender.MALE, label: t("gender.male") },
+  { value: Gender.NONBINARY, label: t("gender.nonbinary") },
+]);
 
 const mode = ref<AuthMode>(AuthMode.Login);
 const validationSchema = computed(() =>
@@ -97,16 +99,16 @@ const submit = handleSubmit(async (formValues) => {
   <main class="flex min-h-dvh items-center justify-center px-6 py-16">
     <form class="w-full max-w-sm" novalidate @submit="submit">
       <h1 class="font-medium">
-        {{ mode === AuthMode.Login ? "Log in" : "Sign up" }}
+        {{ mode === AuthMode.Login ? t("auth.login.title") : t("auth.signup.title") }}
       </h1>
       <p class="mt-2 text-caption text-muted-foreground">
-        {{ mode === AuthMode.Login ? "The night is waiting." : "One account, every night." }}
+        {{ mode === AuthMode.Login ? t("auth.login.subtitle") : t("auth.signup.subtitle") }}
       </p>
 
       <div class="mt-10 space-y-5">
         <Input
           v-model="email"
-          label="Email"
+          :label="t('auth.fields.email')"
           type="email"
           autocomplete="email"
           required
@@ -114,7 +116,7 @@ const submit = handleSubmit(async (formValues) => {
         />
         <Input
           v-model="password"
-          label="Password"
+          :label="t('auth.fields.password')"
           type="password"
           :autocomplete="mode === AuthMode.Login ? 'current-password' : 'new-password'"
           required
@@ -124,7 +126,7 @@ const submit = handleSubmit(async (formValues) => {
         <template v-if="mode === AuthMode.Signup">
           <Input
             v-model="dateOfBirth"
-            label="Date of birth"
+            :label="t('auth.fields.dateOfBirth')"
             type="date"
             autocomplete="bday"
             required
@@ -132,14 +134,16 @@ const submit = handleSubmit(async (formValues) => {
           />
 
           <label class="block">
-            <span class="mb-2 block text-caption text-muted-foreground">Gender</span>
+            <span class="mb-2 block text-caption text-muted-foreground">
+              {{ t("auth.fields.gender") }}
+            </span>
             <select
               v-model="gender"
               required
               :aria-invalid="errors.gender ? 'true' : undefined"
               class="w-full rounded-md border border-input bg-card px-3.5 py-2.5 text-foreground transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/40"
             >
-              <option value="" disabled>Select…</option>
+              <option value="" disabled>{{ t("auth.select") }}</option>
               <option v-for="option in genderOptions" :key="option.value" :value="option.value">
                 {{ option.label }}
               </option>
@@ -150,7 +154,9 @@ const submit = handleSubmit(async (formValues) => {
           </label>
 
           <fieldset>
-            <legend class="mb-2 block text-caption text-muted-foreground">Interested in</legend>
+            <legend class="mb-2 block text-caption text-muted-foreground">
+              {{ t("auth.fields.interestedIn") }}
+            </legend>
             <div class="flex flex-wrap gap-4">
               <label
                 v-for="option in genderOptions"
@@ -183,7 +189,7 @@ const submit = handleSubmit(async (formValues) => {
       </p>
 
       <Button type="submit" :disabled="isSubmitting" class="mt-8 w-full">
-        {{ mode === AuthMode.Login ? "Log in" : "Create account" }}
+        {{ mode === AuthMode.Login ? t("auth.login.submit") : t("auth.signup.submit") }}
       </Button>
 
       <Button
@@ -192,9 +198,7 @@ const submit = handleSubmit(async (formValues) => {
         class="mt-6 block w-full text-center"
         @click="toggleMode"
       >
-        {{
-          mode === AuthMode.Login ? "No account yet? Sign up" : "Already have an account? Log in"
-        }}
+        {{ mode === AuthMode.Login ? t("auth.login.toggle") : t("auth.signup.toggle") }}
       </Button>
     </form>
   </main>

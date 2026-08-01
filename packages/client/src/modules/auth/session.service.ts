@@ -1,6 +1,7 @@
 import { Effect } from "effect";
 import type { ApiResult } from "@/lib/api-client";
 import { err, ok, runApi } from "@/lib/api-client";
+import { translate } from "@/lib/i18n";
 
 // Plain view of the current user for stores/components.
 export interface SessionUser {
@@ -23,7 +24,7 @@ export const me = (): Promise<ApiResult<SessionUser | null>> =>
       Effect.map((user) => ok(toSessionUser(user))),
       // The endpoint's one declared failure: no/expired session cookie.
       Effect.catchTag("UnauthorizedError", () => Effect.succeed(ok(null))),
-      Effect.catchAll(() => Effect.succeed(err("Can't reach the server"))),
+      Effect.catchAll(() => Effect.succeed(err(translate("errors.serverUnavailable")))),
     ),
   );
 

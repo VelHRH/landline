@@ -1,4 +1,5 @@
 import { defineStore } from "pinia";
+import { translate } from "@/lib/i18n";
 import type { ChatSocket } from "./chat-socket.service";
 import { connectChatSocket } from "./chat-socket.service";
 import * as chat from "./chat.service";
@@ -79,7 +80,7 @@ export const useChatStore = defineStore("chat", {
       if (!text || this.currentChatId === null || socket === null) return false;
       this.rejection = null;
       const sent = socket.send(this.currentChatId, text);
-      if (!sent) this.rejection = "Not connected — message not sent";
+      if (!sent) this.rejection = translate("errors.disconnected");
       return sent;
     },
 
