@@ -6,6 +6,7 @@ defineProps<{
   type?: string;
   autocomplete?: string;
   required?: boolean;
+  error?: string;
 }>();
 </script>
 
@@ -17,7 +18,9 @@ defineProps<{
       :type="type ?? 'text'"
       :autocomplete="autocomplete"
       :required="required"
+      :aria-invalid="error ? 'true' : undefined"
       class="w-full rounded-md border border-input bg-card px-3.5 py-2.5 text-foreground transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/40"
     />
+    <span v-if="error" class="mt-2 block text-caption text-destructive">{{ error }}</span>
   </label>
 </template>

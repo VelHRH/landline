@@ -1,4 +1,4 @@
-\restrict FJoickgRocJHjL1ZlRw7w8icPjfqT6fcqktREwGtKAHdkbfWYo1iVzLuXhljmD4
+\restrict wTfu9EHpX085riofKh5xPqrS0sBcgjzoFYTTKzRUA7EDsOMOPaTDWfc3dNN2eLR
 
 CREATE TYPE public.event_status AS ENUM (
     'SCHEDULED',
@@ -248,19 +248,19 @@ ALTER TABLE ONLY public.sessions
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_city_id_fkey FOREIGN KEY (city_id) REFERENCES public.cities(id);
 
-\unrestrict FJoickgRocJHjL1ZlRw7w8icPjfqT6fcqktREwGtKAHdkbfWYo1iVzLuXhljmD4
+\unrestrict wTfu9EHpX085riofKh5xPqrS0sBcgjzoFYTTKzRUA7EDsOMOPaTDWfc3dNN2eLR
 
-\restrict 56p1eOo01LvysrveSnxgjTFJnbfWw07Fy9gR727bzDxzxTfepHSjKD1rzMD6WOr
+\restrict YuUjj7Ac9UtYxQbGBTgihzrCJLad5lgv7YtVpITnrbBh54LUrom6vMDMcIlC9Rf
 
-INSERT INTO public.effect_sql_migrations (migration_id, created_at, name) VALUES (1, '2026-07-29 21:01:54.917946+00', 'create_rooms_table');
-INSERT INTO public.effect_sql_migrations (migration_id, created_at, name) VALUES (2, '2026-07-29 21:01:54.917946+00', 'create_users_and_sessions_tables');
-INSERT INTO public.effect_sql_migrations (migration_id, created_at, name) VALUES (3, '2026-07-29 21:01:54.917946+00', 'hash_session_tokens');
-INSERT INTO public.effect_sql_migrations (migration_id, created_at, name) VALUES (4, '2026-07-29 21:01:54.917946+00', 'create_chat_tables');
-INSERT INTO public.effect_sql_migrations (migration_id, created_at, name) VALUES (5, '2026-07-29 21:01:54.917946+00', 'create_cities_table');
-INSERT INTO public.effect_sql_migrations (migration_id, created_at, name) VALUES (6, '2026-07-29 21:01:54.917946+00', 'add_user_profile_and_role');
-INSERT INTO public.effect_sql_migrations (migration_id, created_at, name) VALUES (7, '2026-07-29 21:01:54.917946+00', 'role_gender_to_enums');
-INSERT INTO public.effect_sql_migrations (migration_id, created_at, name) VALUES (8, '2026-07-29 21:01:54.917946+00', 'create_events_table');
-INSERT INTO public.effect_sql_migrations (migration_id, created_at, name) VALUES (9, '2026-07-29 21:01:54.917946+00', 'create_reservations_and_drop_streak');
-INSERT INTO public.effect_sql_migrations (migration_id, created_at, name) VALUES (10, '2026-07-29 21:01:54.917946+00', 'rooms_under_events');
+INSERT INTO public.effect_sql_migrations (migration_id, created_at, name) VALUES (1, '2026-07-23 14:20:07.613845+00', 'create_rooms_table');
+INSERT INTO public.effect_sql_migrations (migration_id, created_at, name) VALUES (2, '2026-07-23 14:20:07.613845+00', 'create_users_and_sessions_tables');
+INSERT INTO public.effect_sql_migrations (migration_id, created_at, name) VALUES (3, '2026-07-23 14:20:07.613845+00', 'hash_session_tokens');
+INSERT INTO public.effect_sql_migrations (migration_id, created_at, name) VALUES (4, '2026-07-23 14:20:07.613845+00', 'create_chat_tables');
+INSERT INTO public.effect_sql_migrations (migration_id, created_at, name) VALUES (5, '2026-07-27 13:30:43.390487+00', 'create_cities_table');
+INSERT INTO public.effect_sql_migrations (migration_id, created_at, name) VALUES (6, '2026-07-28 09:30:47.60364+00', 'add_user_profile_and_role');
+INSERT INTO public.effect_sql_migrations (migration_id, created_at, name) VALUES (7, '2026-07-28 10:04:52.513978+00', 'role_gender_to_enums');
+INSERT INTO public.effect_sql_migrations (migration_id, created_at, name) VALUES (8, '2026-08-01 13:26:53.254809+00', 'create_events_table');
+INSERT INTO public.effect_sql_migrations (migration_id, created_at, name) VALUES (9, '2026-08-01 13:26:53.254809+00', 'create_reservations_and_drop_streak');
+INSERT INTO public.effect_sql_migrations (migration_id, created_at, name) VALUES (10, '2026-08-01 13:26:53.254809+00', 'rooms_under_events');
 
-\unrestrict 56p1eOo01LvysrveSnxgjTFJnbfWw07Fy9gR727bzDxzxTfepHSjKD1rzMD6WOr
+\unrestrict YuUjj7Ac9UtYxQbGBTgihzrCJLad5lgv7YtVpITnrbBh54LUrom6vMDMcIlC9Rf
