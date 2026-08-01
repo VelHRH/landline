@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { onBeforeUnmount, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import { searchCities, type CityOption } from "./city.service";
 
 // The resolved selection: the chosen city's CityId as a string, or null.
 const selectedId = defineModel<string | null>({ default: null });
 
-withDefaults(
-  defineProps<{
-    label?: string;
-    placeholder?: string;
-  }>(),
-  { label: "City", placeholder: "Start typing a city…" },
-);
+const props = defineProps<{
+  label?: string;
+  placeholder?: string;
+}>();
+
+const { t } = useI18n();
 
 const query = ref("");
 const selectedLabel = ref<string | null>(null);
@@ -79,20 +79,24 @@ onBeforeUnmount(() => {
 <template>
   <div class="relative">
     <label class="block">
-      <span class="mb-2 block text-caption text-muted-foreground">{{ label }}</span>
+      <span class="mb-2 block text-caption text-muted-foreground">
+        {{ props.label ?? t("city.label") }}
+      </span>
       <input
         v-model="query"
         type="text"
         role="combobox"
         autocomplete="off"
         :aria-expanded="open"
-        :placeholder="placeholder"
+        :placeholder="props.placeholder ?? t('city.placeholder')"
         class="w-full rounded-md border border-input bg-card px-3.5 py-2.5 text-foreground transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/40"
         @focus="options.length > 0 && (open = true)"
       />
     </label>
 
-    <p v-if="loading" class="mt-2 text-caption text-muted-foreground">Searching…</p>
+    <p v-if="loading" class="mt-2 text-caption text-muted-foreground">
+      {{ t("city.searching") }}
+    </p>
     <p v-else-if="error" role="alert" class="mt-2 text-caption text-destructive">{{ error }}</p>
 
     <ul
@@ -116,7 +120,7 @@ onBeforeUnmount(() => {
       v-else-if="open && !loading && query.trim().length > 0"
       class="mt-2 text-caption text-muted-foreground"
     >
-      No cities found.
+      {{ t("city.noResults") }}
     </p>
   </div>
 </template>

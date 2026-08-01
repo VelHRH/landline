@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import { RouteName, routeName } from "@/router";
 import { useSessionStore } from "@/modules/auth/session.store";
 import Button from "@/ui/button/Button.vue";
@@ -11,13 +12,14 @@ const props = defineProps<{ chatId: string }>();
 
 const session = useSessionStore();
 const store = useChatStore();
+const { t } = useI18n();
 
 const draft = ref("");
 const scroller = ref<HTMLElement | null>(null);
 
 // The chat screen only has an id; borrow the partner's name from my-chats.
 const partnerEmail = computed(
-  () => store.myChats.find((c) => c.id === props.chatId)?.partnerEmail ?? "Chat",
+  () => store.myChats.find((c) => c.id === props.chatId)?.partnerEmail ?? t("chat.fallbackTitle"),
 );
 
 const scrollToBottom = () => {
@@ -46,13 +48,13 @@ const submit = () => {
 <template>
   <main class="mx-auto flex h-dvh w-full max-w-2xl flex-col px-5 py-6 sm:px-6">
     <header class="flex items-center justify-between gap-4 border-b border-border pb-4">
-      <ButtonLink :to="{ name: routeName(RouteName.CHATS) }"> ← Chats </ButtonLink>
+      <ButtonLink :to="{ name: routeName(RouteName.CHATS) }">{{ t("chat.back") }}</ButtonLink>
       <span class="min-w-0 flex-1 truncate text-center font-medium">{{ partnerEmail }}</span>
       <span
         class="shrink-0 text-caption"
         :class="store.connected ? 'text-muted-foreground' : 'text-destructive'"
       >
-        {{ store.connected ? "Live" : "Connecting…" }}
+        {{ store.connected ? t("chat.live") : t("chat.connecting") }}
       </span>
     </header>
 
@@ -64,7 +66,7 @@ const submit = () => {
         v-else-if="store.messages.length === 0"
         class="mt-8 text-center text-caption text-muted-foreground"
       >
-        No messages yet. Say something.
+        {{ t("chat.empty") }}
       </p>
 
       <div
@@ -92,9 +94,9 @@ const submit = () => {
 
     <form class="flex items-end gap-2 border-t border-border pt-4" @submit.prevent="submit">
       <div class="flex-1">
-        <Input v-model="draft" label="Message" autocomplete="off" />
+        <Input v-model="draft" :label="t('chat.message')" autocomplete="off" />
       </div>
-      <Button type="submit" :disabled="!draft.trim()">Send</Button>
+      <Button type="submit" :disabled="!draft.trim()">{{ t("chat.send") }}</Button>
     </form>
   </main>
 </template>

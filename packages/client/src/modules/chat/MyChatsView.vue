@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import { RouteName, routeName } from "@/router";
 import { useChatStore } from "./chat.store";
 import ButtonLink from "@/ui/ButtonLink.vue";
 
 const store = useChatStore();
+const { t } = useI18n();
 
 onMounted(() => store.loadMyChats());
 </script>
@@ -12,19 +14,21 @@ onMounted(() => store.loadMyChats());
 <template>
   <main class="mx-auto min-h-dvh w-full max-w-2xl px-5 py-10 sm:px-6 sm:py-14">
     <header>
-      <h1 class="font-medium">Your chats</h1>
-      <p class="mt-1 text-caption text-muted-foreground">Return to a conversation.</p>
+      <h1 class="font-medium">{{ t("chats.title") }}</h1>
+      <p class="mt-1 text-caption text-muted-foreground">{{ t("chats.subtitle") }}</p>
     </header>
 
     <section class="mt-8">
-      <p v-if="store.myChatsLoading" class="text-caption text-muted-foreground">Loading chats…</p>
+      <p v-if="store.myChatsLoading" class="text-caption text-muted-foreground">
+        {{ t("chats.loading") }}
+      </p>
 
       <p v-else-if="store.myChatsError" role="alert" class="text-caption text-destructive">
         {{ store.myChatsError }}
       </p>
 
       <p v-else-if="store.myChats.length === 0" class="text-caption text-muted-foreground">
-        No chats yet. They open once your room is composed.
+        {{ t("chats.empty") }}
       </p>
 
       <ul v-else class="space-y-3">
