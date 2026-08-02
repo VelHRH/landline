@@ -190,7 +190,7 @@ const submit = handleSubmit(async (formValues) => {
         {{ submitError }}
       </p>
 
-      <Button type="submit" :disabled="isSubmitting" class="mt-8 w-full">
+      <Button type="submit" :loading="isSubmitting" class="mt-8 w-full">
         {{ mode === AuthMode.Login ? t("auth.login.submit") : t("auth.signup.submit") }}
       </Button>
 

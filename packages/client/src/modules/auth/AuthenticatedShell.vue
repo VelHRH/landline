@@ -3,6 +3,9 @@ import { nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import { RouteName, routeName } from "@/router";
+import Button from "@/ui/button/Button.vue";
+import { ButtonSize } from "@/ui/button/button-size";
+import { ButtonVariant } from "@/ui/button/button-variant";
 import LandlineWordmark from "@/ui/LandlineWordmark.vue";
 import AuthenticatedNavigation from "./AuthenticatedNavigation.vue";
 import { useSessionStore } from "./session.store";
@@ -15,10 +18,8 @@ const { t } = useI18n();
 const drawerOpen = ref(false);
 const loggingOut = ref(false);
 const drawer = ref<HTMLElement | null>(null);
-const menuButton = ref<HTMLButtonElement | null>(null);
-const closeButton = ref<HTMLButtonElement | null>(null);
-const mobileControlClasses =
-  "cursor-pointer rounded-sm text-caption text-muted-foreground underline-offset-4 transition hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+const menuButton = ref<InstanceType<typeof Button> | null>(null);
+const closeButton = ref<InstanceType<typeof Button> | null>(null);
 
 const openDrawer = async () => {
   drawerOpen.value = true;
@@ -91,17 +92,18 @@ watch(
         class="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-5 md:hidden"
       >
         <img src="/logo/landline-symbol-color.svg" alt="Landline" class="h-9 w-auto" />
-        <button
+        <Button
           ref="menuButton"
           type="button"
-          :class="mobileControlClasses"
+          :variant="ButtonVariant.LINK"
+          :size="ButtonSize.COMPACT"
           :aria-label="t('navigation.openMenu')"
           aria-controls="mobile-navigation"
           :aria-expanded="drawerOpen"
           @click="openDrawer"
         >
           {{ t("navigation.menu") }}
-        </button>
+        </Button>
       </header>
 
       <div class="min-h-0 flex-1 overflow-y-auto">
@@ -124,15 +126,16 @@ watch(
           <h2 id="mobile-navigation-title" class="text-h3 font-medium">
             {{ t("navigation.menu") }}
           </h2>
-          <button
+          <Button
             ref="closeButton"
             type="button"
-            :class="mobileControlClasses"
+            :variant="ButtonVariant.LINK"
+            :size="ButtonSize.COMPACT"
             :aria-label="t('navigation.closeMenu')"
             @click="closeDrawer()"
           >
             {{ t("navigation.close") }}
-          </button>
+          </Button>
         </div>
         <AuthenticatedNavigation
           :logout-disabled="loggingOut"

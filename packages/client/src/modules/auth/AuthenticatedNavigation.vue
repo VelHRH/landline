@@ -4,6 +4,8 @@ import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 import { RouteName, routeName } from "@/router";
 import Button from "@/ui/button/Button.vue";
+import { buttonBaseClasses, sizeClasses } from "@/ui/button/button-config";
+import { ButtonSize } from "@/ui/button/button-size";
 import { ButtonVariant } from "@/ui/button/button-variant";
 import { useSessionStore } from "./session.store";
 
@@ -28,12 +30,14 @@ const chatsActive = computed(() =>
     <nav :aria-label="t('navigation.label')" class="flex-1 py-6">
       <RouterLink
         :to="{ name: routeName(RouteName.CHATS) }"
-        class="block rounded-md px-3.5 py-2.5 font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-        :class="
+        :class="[
+          buttonBaseClasses,
+          sizeClasses[ButtonSize.DEFAULT],
+          'w-full justify-start',
           chatsActive
             ? 'bg-accent text-accent-foreground'
-            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-        "
+            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground active:bg-muted',
+        ]"
         :aria-current="chatsActive ? 'location' : undefined"
         @click="emit('navigate')"
       >
@@ -51,6 +55,7 @@ const chatsActive = computed(() =>
         :variant="ButtonVariant.SECONDARY"
         class="mt-4 w-full"
         :disabled="logoutDisabled"
+        :loading="logoutDisabled"
         @click="emit('logout')"
       >
         {{ t("navigation.logout") }}

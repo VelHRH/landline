@@ -4,6 +4,7 @@ import { useI18n } from "vue-i18n";
 import { RouteName, routeName } from "@/router";
 import { useChatStore } from "./chat.store";
 import ButtonLink from "@/ui/ButtonLink.vue";
+import { ButtonVariant } from "@/ui/button/button-variant";
 
 const store = useChatStore();
 const { t } = useI18n();
@@ -35,7 +36,8 @@ onMounted(() => store.loadMyChats());
         <li v-for="chat in store.myChats" :key="chat.id">
           <ButtonLink
             :to="{ name: routeName(RouteName.CHAT), params: { chatId: chat.id } }"
-            class="block rounded-md border border-border bg-card p-4 shadow-sm transition hover:bg-accent"
+            :variant="ButtonVariant.SECONDARY"
+            class="w-full justify-start p-4"
           >
             <span class="min-w-0 truncate font-medium">{{ chat.partnerEmail }}</span>
           </ButtonLink>
