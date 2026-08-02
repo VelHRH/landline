@@ -71,8 +71,11 @@ export const messages = {
       openMenu: "Open menu",
       closeMenu: "Close menu",
       close: "Close",
+      collapseMenu: "Collapse side menu",
+      expandMenu: "Expand side menu",
       chats: "Chats",
       signedInAs: "Signed in as",
+      signedInAsValue: "Signed in as {email}",
       logout: "Log out",
     },
     chat: {
