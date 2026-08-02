@@ -15,7 +15,17 @@ const router = useRouter();
 const session = useSessionStore();
 const { t } = useI18n();
 
+const desktopNavigationStorageKey = "landline:desktop-navigation-collapsed";
+const readDesktopNavigationCollapsed = () => {
+  try {
+    return window.localStorage.getItem(desktopNavigationStorageKey) === "true";
+  } catch {
+    return false;
+  }
+};
+
 const drawerOpen = ref(false);
+const desktopNavigationCollapsed = ref(readDesktopNavigationCollapsed());
 const loggingOut = ref(false);
 const drawer = ref<HTMLElement | null>(null);
 const menuButton = ref<InstanceType<typeof Button> | null>(null);
@@ -33,6 +43,10 @@ const closeDrawer = async (restoreFocus = true) => {
     await nextTick();
     menuButton.value?.focus();
   }
+};
+
+const toggleDesktopNavigation = () => {
+  desktopNavigationCollapsed.value = !desktopNavigationCollapsed.value;
 };
 
 const handleDrawerKeydown = (event: KeyboardEvent) => {
@@ -78,13 +92,66 @@ watch(
     if (drawerOpen.value) void closeDrawer(false);
   },
 );
+
+watch(desktopNavigationCollapsed, (collapsed) => {
+  try {
+    window.localStorage.setItem(desktopNavigationStorageKey, String(collapsed));
+  } catch {
+    return;
+  }
+});
 </script>
 
 <template>
   <div class="flex h-dvh overflow-hidden bg-background">
-    <aside class="hidden w-64 shrink-0 flex-col border-r border-border bg-card px-5 py-6 md:flex">
-      <LandlineWordmark class="w-36" />
-      <AuthenticatedNavigation :logout-disabled="loggingOut" @logout="logout" />
+    <aside
+      id="desktop-navigation"
+      class="hidden shrink-0 flex-col border-r border-border bg-card py-6 motion-safe:transition-[width,padding] motion-safe:duration-200 md:flex"
+      :class="desktopNavigationCollapsed ? 'w-20 px-3' : 'w-64 px-5'"
+    >
+      <div
+        class="flex items-center"
+        :class="desktopNavigationCollapsed ? 'flex-col gap-3' : 'justify-between gap-3'"
+      >
+        <img
+          v-if="desktopNavigationCollapsed"
+          src="/logo/landline-symbol-color.svg"
+          alt="Landline"
+          class="h-9 w-auto"
+        />
+        <LandlineWordmark v-else class="w-36" />
+        <Button
+          type="button"
+          :variant="ButtonVariant.LINK"
+          :size="ButtonSize.ICON"
+          :aria-label="
+            t(desktopNavigationCollapsed ? 'navigation.expandMenu' : 'navigation.collapseMenu')
+          "
+          aria-controls="desktop-navigation"
+          :aria-expanded="!desktopNavigationCollapsed"
+          @click="toggleDesktopNavigation"
+        >
+          <svg
+            aria-hidden="true"
+            class="size-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+          >
+            <path
+              :d="desktopNavigationCollapsed ? 'm9 6 6 6-6 6' : 'm15 6-6 6 6 6'"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </Button>
+      </div>
+      <AuthenticatedNavigation
+        :collapsed="desktopNavigationCollapsed"
+        :logout-disabled="loggingOut"
+        @logout="logout"
+      />
     </aside>
 
     <div class="flex min-w-0 flex-1 flex-col">

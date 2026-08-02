@@ -7,6 +7,7 @@ export const buttonBaseClasses =
 export const sizeClasses: Record<ButtonSize, string> = {
   [ButtonSize.DEFAULT]: "min-h-10 rounded-sm px-3.5 py-2",
   [ButtonSize.COMPACT]: "min-h-10 rounded-sm px-2.5 py-1.5 text-caption",
+  [ButtonSize.ICON]: "size-10 shrink-0 rounded-sm p-0",
 };
 
 export const variantClasses: Record<ButtonVariant, string> = {
