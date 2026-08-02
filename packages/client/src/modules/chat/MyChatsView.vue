@@ -12,7 +12,7 @@ onMounted(() => store.loadMyChats());
 </script>
 
 <template>
-  <main class="mx-auto min-h-dvh w-full max-w-2xl px-5 py-10 sm:px-6 sm:py-14">
+  <main class="mx-auto min-h-full w-full max-w-2xl px-5 py-10 sm:px-6 sm:py-14">
     <header>
       <h1 class="font-medium">{{ t("chats.title") }}</h1>
       <p class="mt-1 text-caption text-muted-foreground">{{ t("chats.subtitle") }}</p>

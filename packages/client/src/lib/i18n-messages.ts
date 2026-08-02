@@ -65,6 +65,16 @@ export const messages = {
       loading: "Loading chats…",
       empty: "No chats yet. They open once your room is composed.",
     },
+    navigation: {
+      label: "Main navigation",
+      menu: "Menu",
+      openMenu: "Open menu",
+      closeMenu: "Close menu",
+      close: "Close",
+      chats: "Chats",
+      signedInAs: "Signed in as",
+      logout: "Log out",
+    },
     chat: {
       fallbackTitle: "Chat",
       back: "← Chats",
