@@ -18,8 +18,8 @@ import Input from "@/ui/Input.vue";
 import LandlineWordmark from "@/ui/LandlineWordmark.vue";
 
 enum AuthMode {
-  Login = "login",
-  Signup = "signup",
+  LOGIN = "LOGIN",
+  SIGNUP = "SIGNUP",
 }
 
 const session = useSessionStore();
@@ -72,9 +72,9 @@ const genderOptions = computed<ReadonlyArray<{ value: Gender; label: string }>>(
   { value: Gender.NONBINARY, label: t("gender.nonbinary") },
 ]);
 
-const mode = ref<AuthMode>(AuthMode.Login);
+const mode = ref<AuthMode>(AuthMode.LOGIN);
 const validationSchema = computed(() =>
-  mode.value === AuthMode.Login ? credentialsValidationSchema : signUpValidationSchema,
+  mode.value === AuthMode.LOGIN ? credentialsValidationSchema : signUpValidationSchema,
 );
 
 const { defineField, errors, handleSubmit, isSubmitting, resetForm, values } =
@@ -99,7 +99,7 @@ const [cityId] = defineField("cityId");
 const submitError = ref<string | null>(null);
 
 const toggleMode = () => {
-  mode.value = mode.value === AuthMode.Login ? AuthMode.Signup : AuthMode.Login;
+  mode.value = mode.value === AuthMode.LOGIN ? AuthMode.SIGNUP : AuthMode.LOGIN;
   submitError.value = null;
   resetForm({ values: { ...values } });
 };
@@ -113,7 +113,7 @@ const toggleInterested = (value: Gender) => {
 const submit = handleSubmit(async (formValues) => {
   submitError.value = null;
   const result =
-    mode.value === AuthMode.Login
+    mode.value === AuthMode.LOGIN
       ? await session.login(formValues.email, formValues.password)
       : await session.signUp({
           email: formValues.email,
@@ -183,10 +183,10 @@ const submit = handleSubmit(async (formValues) => {
         @submit="submit"
       >
         <h1 class="font-medium">
-          {{ mode === AuthMode.Login ? t("auth.login.title") : t("auth.signup.title") }}
+          {{ mode === AuthMode.LOGIN ? t("auth.login.title") : t("auth.signup.title") }}
         </h1>
         <p class="mt-2 text-caption text-muted-foreground">
-          {{ mode === AuthMode.Login ? t("auth.login.subtitle") : t("auth.signup.subtitle") }}
+          {{ mode === AuthMode.LOGIN ? t("auth.login.subtitle") : t("auth.signup.subtitle") }}
         </p>
 
         <div class="mt-8 space-y-5">
@@ -202,12 +202,12 @@ const submit = handleSubmit(async (formValues) => {
             v-model="password"
             :label="t('auth.fields.password')"
             type="password"
-            :autocomplete="mode === AuthMode.Login ? 'current-password' : 'new-password'"
+            :autocomplete="mode === AuthMode.LOGIN ? 'current-password' : 'new-password'"
             required
             :error="errors.password"
           />
 
-          <template v-if="mode === AuthMode.Signup">
+          <template v-if="mode === AuthMode.SIGNUP">
             <Input
               v-model="dateOfBirth"
               :label="t('auth.fields.dateOfBirth')"
@@ -273,7 +273,7 @@ const submit = handleSubmit(async (formValues) => {
         </p>
 
         <Button type="submit" :loading="isSubmitting" class="mt-8 w-full">
-          {{ mode === AuthMode.Login ? t("auth.login.submit") : t("auth.signup.submit") }}
+          {{ mode === AuthMode.LOGIN ? t("auth.login.submit") : t("auth.signup.submit") }}
         </Button>
 
         <Button
@@ -282,7 +282,7 @@ const submit = handleSubmit(async (formValues) => {
           class="mt-6 block w-full text-center"
           @click="toggleMode"
         >
-          {{ mode === AuthMode.Login ? t("auth.login.toggle") : t("auth.signup.toggle") }}
+          {{ mode === AuthMode.LOGIN ? t("auth.login.toggle") : t("auth.signup.toggle") }}
         </Button>
       </form>
     </div>
