@@ -3,6 +3,7 @@ import { nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import { RouteName, routeName } from "@/router";
+import LandlineWordmark from "@/ui/LandlineWordmark.vue";
 import AuthenticatedNavigation from "./AuthenticatedNavigation.vue";
 import { useSessionStore } from "./session.store";
 
@@ -81,7 +82,7 @@ watch(
 <template>
   <div class="flex h-dvh overflow-hidden bg-background">
     <aside class="hidden w-64 shrink-0 flex-col border-r border-border bg-card px-5 py-6 md:flex">
-      <p class="text-h3 font-medium">Landline</p>
+      <LandlineWordmark class="w-36" />
       <AuthenticatedNavigation :logout-disabled="loggingOut" @logout="logout" />
     </aside>
 
@@ -89,7 +90,7 @@ watch(
       <header
         class="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-5 md:hidden"
       >
-        <p class="font-medium">Landline</p>
+        <img src="/logo/landline-symbol-color.svg" alt="Landline" class="h-9 w-auto" />
         <button
           ref="menuButton"
           type="button"
