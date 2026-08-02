@@ -15,6 +15,7 @@ import { useSessionStore } from "./session.store";
 import Button from "@/ui/button/Button.vue";
 import { ButtonVariant } from "@/ui/button/button-variant";
 import Input from "@/ui/Input.vue";
+import LandlineWordmark from "@/ui/LandlineWordmark.vue";
 
 enum AuthMode {
   Login = "login",
@@ -98,6 +99,7 @@ const submit = handleSubmit(async (formValues) => {
 <template>
   <main class="flex min-h-dvh items-center justify-center px-6 py-16">
     <form class="w-full max-w-sm" novalidate @submit="submit">
+      <LandlineWordmark class="mb-10 w-40" />
       <h1 class="font-medium">
         {{ mode === AuthMode.Login ? t("auth.login.title") : t("auth.signup.title") }}
       </h1>
