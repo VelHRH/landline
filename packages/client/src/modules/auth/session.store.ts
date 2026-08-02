@@ -38,8 +38,12 @@ export const useSessionStore = defineStore("session", {
       return result;
     },
     async logout() {
-      await session.logout();
-      this.user = null;
+      try {
+        await session.logout();
+      } finally {
+        this.user = null;
+        this.resolved = true;
+      }
     },
   },
 });

@@ -46,7 +46,7 @@ const submit = () => {
 </script>
 
 <template>
-  <main class="mx-auto flex h-dvh w-full max-w-2xl flex-col px-5 py-6 sm:px-6">
+  <main class="mx-auto flex h-full w-full max-w-2xl flex-col px-5 py-6 sm:px-6">
     <header class="flex items-center justify-between gap-4 border-b border-border pb-4">
       <ButtonLink :to="{ name: routeName(RouteName.CHATS) }">{{ t("chat.back") }}</ButtonLink>
       <span class="min-w-0 flex-1 truncate text-center font-medium">{{ partnerEmail }}</span>
