@@ -155,21 +155,18 @@ watch(desktopNavigationCollapsed, (collapsed) => {
     </aside>
 
     <div class="flex min-w-0 flex-1 flex-col">
-      <header
-        class="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-5 md:hidden"
-      >
-        <img src="/logo/landline-symbol-color.svg" alt="Landline" class="h-9 w-auto" />
+      <header class="flex h-16 shrink-0 items-center border-b border-border bg-card px-5 md:hidden">
         <Button
           ref="menuButton"
           type="button"
           :variant="ButtonVariant.LINK"
-          :size="ButtonSize.COMPACT"
+          :size="ButtonSize.ICON"
           :aria-label="t('navigation.openMenu')"
           aria-controls="mobile-navigation"
           :aria-expanded="drawerOpen"
           @click="openDrawer"
         >
-          {{ t("navigation.menu") }}
+          <img src="/logo/landline-symbol-color.svg" alt="" aria-hidden="true" class="h-9 w-auto" />
         </Button>
       </header>
 
@@ -189,19 +186,24 @@ watch(desktopNavigationCollapsed, (collapsed) => {
         class="absolute inset-y-0 right-0 flex w-[min(20rem,85vw)] flex-col border-l border-border bg-card px-5 py-6 shadow-md"
         @keydown="handleDrawerKeydown"
       >
-        <div class="flex items-center justify-between gap-4">
-          <h2 id="mobile-navigation-title" class="text-h3 font-medium">
+        <div class="flex items-center">
+          <h2 id="mobile-navigation-title" class="sr-only">
             {{ t("navigation.menu") }}
           </h2>
           <Button
             ref="closeButton"
             type="button"
             :variant="ButtonVariant.LINK"
-            :size="ButtonSize.COMPACT"
+            :size="ButtonSize.ICON"
             :aria-label="t('navigation.closeMenu')"
             @click="closeDrawer()"
           >
-            {{ t("navigation.close") }}
+            <img
+              src="/logo/landline-symbol-color.svg"
+              alt=""
+              aria-hidden="true"
+              class="h-9 w-auto"
+            />
           </Button>
         </div>
         <AuthenticatedNavigation
