@@ -6,7 +6,6 @@ import { RouteName, routeName } from "@/router";
 import Button from "@/ui/button/Button.vue";
 import { ButtonSize } from "@/ui/button/button-size";
 import { ButtonVariant } from "@/ui/button/button-variant";
-import LandlineWordmark from "@/ui/LandlineWordmark.vue";
 import AuthenticatedNavigation from "./AuthenticatedNavigation.vue";
 import { useSessionStore } from "./session.store";
 
@@ -109,26 +108,34 @@ watch(desktopNavigationCollapsed, (collapsed) => {
       class="hidden shrink-0 flex-col border-r border-border bg-card py-6 motion-safe:transition-[width,padding] motion-safe:duration-200 md:flex"
       :class="desktopNavigationCollapsed ? 'w-20 px-3' : 'w-64 px-5'"
     >
-      <div
-        class="flex items-center"
-        :class="desktopNavigationCollapsed ? 'flex-col gap-3' : 'justify-between gap-3'"
+      <Button
+        v-if="desktopNavigationCollapsed"
+        type="button"
+        :variant="ButtonVariant.LINK"
+        :size="ButtonSize.ICON"
+        class="self-center"
+        :aria-label="t('navigation.expandMenu')"
+        aria-controls="desktop-navigation"
+        :aria-expanded="false"
+        @click="toggleDesktopNavigation"
       >
-        <img
-          v-if="desktopNavigationCollapsed"
-          src="/logo/landline-symbol-color.svg"
-          alt="Landline"
-          class="h-9 w-auto"
-        />
-        <LandlineWordmark v-else class="w-36" />
+        <img src="/logo/landline-symbol-color.svg" alt="" aria-hidden="true" class="h-9 w-auto" />
+      </Button>
+      <div v-else class="flex items-center justify-between gap-3">
+        <RouterLink
+          :to="{ name: routeName(RouteName.CHATS) }"
+          class="flex min-w-0 items-center gap-2 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        >
+          <img src="/logo/landline-symbol-color.svg" alt="" aria-hidden="true" class="h-9 w-auto" />
+          <span class="text-h2 font-medium text-foreground">Landline</span>
+        </RouterLink>
         <Button
           type="button"
           :variant="ButtonVariant.LINK"
           :size="ButtonSize.ICON"
-          :aria-label="
-            t(desktopNavigationCollapsed ? 'navigation.expandMenu' : 'navigation.collapseMenu')
-          "
+          :aria-label="t('navigation.collapseMenu')"
           aria-controls="desktop-navigation"
-          :aria-expanded="!desktopNavigationCollapsed"
+          :aria-expanded="true"
           @click="toggleDesktopNavigation"
         >
           <svg
@@ -139,11 +146,7 @@ watch(desktopNavigationCollapsed, (collapsed) => {
             stroke="currentColor"
             stroke-width="1.8"
           >
-            <path
-              :d="desktopNavigationCollapsed ? 'm9 6 6 6-6 6' : 'm15 6-6 6 6 6'"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
+            <path d="m15 6-6 6 6 6" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
         </Button>
       </div>
@@ -155,18 +158,21 @@ watch(desktopNavigationCollapsed, (collapsed) => {
     </aside>
 
     <div class="flex min-w-0 flex-1 flex-col">
-      <header class="flex h-16 shrink-0 items-center border-b border-border bg-card px-5 md:hidden">
+      <header
+        class="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-5 md:hidden"
+      >
+        <img src="/logo/landline-symbol-color.svg" alt="Landline" class="h-9 w-auto" />
         <Button
           ref="menuButton"
           type="button"
           :variant="ButtonVariant.LINK"
-          :size="ButtonSize.ICON"
+          :size="ButtonSize.COMPACT"
           :aria-label="t('navigation.openMenu')"
           aria-controls="mobile-navigation"
           :aria-expanded="drawerOpen"
           @click="openDrawer"
         >
-          <img src="/logo/landline-symbol-color.svg" alt="" aria-hidden="true" class="h-9 w-auto" />
+          {{ t("navigation.menu") }}
         </Button>
       </header>
 
@@ -186,24 +192,19 @@ watch(desktopNavigationCollapsed, (collapsed) => {
         class="absolute inset-y-0 right-0 flex w-[min(20rem,85vw)] flex-col border-l border-border bg-card px-5 py-6 shadow-md"
         @keydown="handleDrawerKeydown"
       >
-        <div class="flex items-center">
-          <h2 id="mobile-navigation-title" class="sr-only">
+        <div class="flex items-center justify-between gap-4">
+          <h2 id="mobile-navigation-title" class="text-h3 font-medium">
             {{ t("navigation.menu") }}
           </h2>
           <Button
             ref="closeButton"
             type="button"
             :variant="ButtonVariant.LINK"
-            :size="ButtonSize.ICON"
+            :size="ButtonSize.COMPACT"
             :aria-label="t('navigation.closeMenu')"
             @click="closeDrawer()"
           >
-            <img
-              src="/logo/landline-symbol-color.svg"
-              alt=""
-              aria-hidden="true"
-              class="h-9 w-auto"
-            />
+            {{ t("navigation.close") }}
           </Button>
         </div>
         <AuthenticatedNavigation

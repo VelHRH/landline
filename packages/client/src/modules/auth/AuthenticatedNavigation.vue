@@ -47,7 +47,6 @@ const chatsActive = computed(() =>
         @click="emit('navigate')"
       >
         <svg
-          v-if="collapsed"
           aria-hidden="true"
           class="size-5"
           viewBox="0 0 24 24"
