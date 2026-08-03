@@ -63,6 +63,7 @@ layer(TestServerLive, { excludeTestServices: true })("auth", (it) => {
       expect(me.gender).toBe(Gender.FEMALE);
       expect(me.interestedIn).toEqual([Gender.MALE, Gender.NONBINARY]);
       expect(me.cityId).toBe(cityId);
+      expect(me.city).toEqual({ name: "Testville", country: "Testland" });
       expect(me.dateOfBirth).toBe("1995-06-15");
     }));
 

@@ -4,12 +4,23 @@ import { CreateSessionInput, CreateUserInput, SessionsRepo, UsersRepo } from "#m
 import { UserWithCredentials } from "#modules/user/domain/schema.js";
 import * as SqlClient from "@effect/sql/SqlClient";
 import * as SqlSchema from "@effect/sql/SqlSchema";
+import { CitySummary } from "@landline/domain/city/schema";
 import { CityNotFoundError, EmailAlreadyInUseError } from "@landline/domain/user/errors";
-import { Me, User, UserId } from "@landline/domain/user/schema";
+import { Me, Profile, User, UserId } from "@landline/domain/user/schema";
 import * as Effect from "effect/Effect";
 import { flow } from "effect/Function";
 import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
+
+const SessionUserRow = Schema.Struct({
+  ...User.fields,
+  role: Me.fields.role,
+  ...Profile.fields,
+  cityName: Schema.String,
+  cityCountry: Schema.String,
+  dropStreak: Me.fields.dropStreak,
+});
 
 export const UsersRepoLive = Layer.effect(
   UsersRepo,
@@ -79,7 +90,7 @@ export const SessionsRepoLive = Layer.effect(
     });
 
     const findUser = SqlSchema.findOne({
-      Result: Me,
+      Result: SessionUserRow,
       Request: Schema.String,
       execute: (tokenHash) =>
         sql`
@@ -91,12 +102,15 @@ export const SessionsRepoLive = Layer.effect(
           users.gender,
           users.interested_in::text[] AS interested_in,
           users.city_id,
+          cities.name AS city_name,
+          cities.country AS city_country,
           users.drop_streak,
           users.created_at,
           users.updated_at
         FROM
           sessions
           INNER JOIN users ON users.id = sessions.user_id
+          INNER JOIN cities ON cities.id = users.city_id
         WHERE
           sessions.token_hash = ${tokenHash}
           AND sessions.expires_at > now()
@@ -115,7 +129,19 @@ export const SessionsRepoLive = Layer.effect(
 
     return {
       create: flow(create, Effect.orDie),
-      findUser: flow(findUser, Effect.orDie),
+      findUser: (tokenHash: string) =>
+        findUser(tokenHash).pipe(
+          Effect.map(
+            Option.map(
+              ({ cityCountry, cityName, ...user }) =>
+                new Me({
+                  ...user,
+                  city: new CitySummary({ name: cityName, country: cityCountry }),
+                }),
+            ),
+          ),
+          Effect.orDie,
+        ),
       deleteAllForUser: flow(deleteAllForUser, Effect.orDie),
     };
   }),

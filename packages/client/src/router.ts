@@ -3,16 +3,19 @@ import { useSessionStore } from "@/modules/auth/session.store";
 import AuthView from "@/modules/auth/AuthView.vue";
 import ChatView from "@/modules/chat/ChatView.vue";
 import MyChatsView from "@/modules/chat/MyChatsView.vue";
+import ProfileView from "@/modules/profile/ProfileView.vue";
 
 export enum RouteName {
   CHATS = "CHATS",
   CHAT = "CHAT",
+  PROFILE = "PROFILE",
   AUTH = "AUTH",
 }
 
 const routeConfig: Record<RouteName, RouteRecordRaw & { name: string }> = {
   [RouteName.CHATS]: { path: "/", name: "chats", component: MyChatsView },
   [RouteName.CHAT]: { path: "/chats/:chatId", name: "chat", component: ChatView, props: true },
+  [RouteName.PROFILE]: { path: "/profile", name: "profile", component: ProfileView },
   [RouteName.AUTH]: { path: "/auth", name: "auth", component: AuthView, meta: { public: true } },
 };
 

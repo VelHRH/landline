@@ -80,9 +80,23 @@ export const messages = {
       collapseMenu: "Collapse side menu",
       expandMenu: "Expand side menu",
       chats: "Chats",
+      profile: "Profile",
       signedInAs: "Signed in as",
       signedInAsValue: "Signed in as {email}",
       logout: "Log out",
+    },
+    profile: {
+      title: "Profile",
+      subtitle: "The details you bring to every Landline night.",
+      loading: "Loading your profile…",
+      unavailable: "Your session is no longer available. Log in again to view your profile.",
+      fields: {
+        email: "Email",
+        dateOfBirth: "Date of birth",
+        gender: "Gender",
+        interestedIn: "Interested in",
+        city: "City",
+      },
     },
     chat: {
       fallbackTitle: "Chat",
