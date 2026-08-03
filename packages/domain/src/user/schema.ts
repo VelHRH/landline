@@ -1,4 +1,4 @@
-import { CityId } from "#city/schema.js";
+import { CityId, CitySummary } from "#city/schema.js";
 import { Schema } from "effect";
 import { Gender, Role } from "./enums.js";
 
@@ -37,5 +37,6 @@ export class Me extends Schema.Class<Me>("Me")({
   ...User.fields,
   role: Schema.Enums(Role),
   ...Profile.fields,
+  city: CitySummary,
   dropStreak: Schema.Int,
 }) {}

@@ -23,13 +23,14 @@ const { t } = useI18n();
 const chatsActive = computed(() =>
   [routeName(RouteName.CHATS), routeName(RouteName.CHAT)].includes(String(route.name)),
 );
+const profileActive = computed(() => route.name === routeName(RouteName.PROFILE));
 </script>
 
 <template>
   <div class="flex min-h-0 flex-1 flex-col">
     <nav
       :aria-label="t('navigation.label')"
-      class="flex-1 py-6"
+      class="flex-1 space-y-2 py-6"
       :class="collapsed ? 'flex flex-col items-center' : undefined"
     >
       <RouterLink
@@ -57,6 +58,33 @@ const chatsActive = computed(() =>
           <path d="M5 17.5 3.5 21l4.3-1.7A9 9 0 1 0 5 17.5Z" stroke-linejoin="round" />
         </svg>
         <span :class="collapsed ? 'sr-only' : undefined">{{ t("navigation.chats") }}</span>
+      </RouterLink>
+      <RouterLink
+        :to="{ name: routeName(RouteName.PROFILE) }"
+        :title="collapsed ? t('navigation.profile') : undefined"
+        :class="[
+          buttonBaseClasses,
+          sizeClasses[collapsed ? ButtonSize.ICON : ButtonSize.DEFAULT],
+          collapsed ? undefined : 'w-full justify-start',
+          profileActive
+            ? 'bg-accent text-accent-foreground'
+            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground active:bg-muted',
+        ]"
+        :aria-current="profileActive ? 'location' : undefined"
+        @click="emit('navigate')"
+      >
+        <svg
+          aria-hidden="true"
+          class="size-5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+        >
+          <circle cx="12" cy="8" r="3.5" />
+          <path d="M5.5 20a6.5 6.5 0 0 1 13 0" />
+        </svg>
+        <span :class="collapsed ? 'sr-only' : undefined">{{ t("navigation.profile") }}</span>
       </RouterLink>
     </nav>
 
