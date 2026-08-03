@@ -13,6 +13,12 @@ export const messages = {
         submit: "Create account",
         toggle: "Already have an account? Log in",
       },
+      phrases: {
+        cover: "Don’t judge a book by its cover.",
+        hello: "Skip the swipe. Start with hello.",
+        person: "Meet the person before the picture.",
+        weekend: "One good conversation can change the weekend.",
+      },
       fields: {
         email: "Email",
         password: "Password",
